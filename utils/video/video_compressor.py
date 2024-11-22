@@ -2,13 +2,11 @@ import ffmpeg
 import os
 import tqdm
 from datetime import datetime
-from utils.video.config import video_filetypes
+from utils.video.config import VIDEO_FILETYPES
+from utils.video.config import VIDEO_CODECS
 
 class VideoCompressor:
-    # Conversion parameters
-    VIDEO_CODEC = "h264_qsv"    # Use Intel QSV codec for video
-    FRAMERATE = 29.97           # Frame rate
-    VIDEO_FILETYPES = video_filetypes
+    FRAMERATE = 29.97
 
     @classmethod
     def __get_bitrate(self, input_file):
@@ -19,7 +17,25 @@ class VideoCompressor:
         return f"{new_bitrate}K"
 
     @classmethod
-    def __compress_video(self, input_file, output_file, bitrate, video_codec=VIDEO_CODEC, framerate=FRAMERATE):
+    def __is_codec_available(self, codec):
+        """Check if the specified codec is available on the system."""
+        try:
+            ffmpeg.input('dummy').output('dummy.mp4', vcodec=codec).global_args('-loglevel', 'error').compile()
+            return True
+        except ffmpeg.Error:
+            return False
+    
+    @classmethod
+    def select_best_codec(self):
+        """Select the best available codec."""
+        for codec in VIDEO_CODECS:
+            if self.__is_codec_available(codec):
+                return codec
+        else:
+            raise RuntimeError("No supported video codec is available.")
+
+    @classmethod
+    def __compress_video(self, input_file, output_file, bitrate, video_codec, framerate=FRAMERATE):
         try:
             (
                 ffmpeg
@@ -40,7 +56,10 @@ class VideoCompressor:
             print(f"An error occurred: {e.stderr.decode()}")
 
     @classmethod
-    def compress_videos_in_directory(self, input_directory, video_codec=VIDEO_CODEC, framerate=30):
+    def compress_videos_in_directory(self, input_directory, framerate=30):
+        # Select the best available codec
+        video_codec = self.select_best_codec()
+
         # Create a timestamped output directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_directory = f"./output_{timestamp}"
@@ -50,7 +69,7 @@ class VideoCompressor:
         video_files = []
         for root, _, files in os.walk(input_directory):
             for file in files:
-                if any(file.lower().endswith(ext) for ext in self.VIDEO_FILETYPES):
+                if any(file.lower().endswith(ext) for ext in VIDEO_FILETYPES):
                     video_files.append(os.path.join(root, file))
 
         # Set up the progress bar

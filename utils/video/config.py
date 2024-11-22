@@ -1,4 +1,4 @@
-video_filetypes = [
+VIDEO_FILETYPES = [
     ".mp4",
     ".avi",
     ".mkv",
@@ -15,3 +15,5 @@ video_filetypes = [
     ".asf",
     ".rm",
 ]
+
+VIDEO_CODECS = ["h264_qsv", "libx264"]

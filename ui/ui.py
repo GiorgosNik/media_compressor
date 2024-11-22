@@ -10,6 +10,7 @@ class CompressorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("GEP Media Compressor")
+        self.iconbitmap('./assets/gep.ico')
         self.geometry("500x200")
         self.directory = None
         self.running = False
