@@ -6,7 +6,7 @@ from utils.video.config import video_filetypes
 
 class VideoCompressor:
     # Conversion parameters
-    VIDEO_CODEC = "libx264"     # Video codec
+    VIDEO_CODEC = "h264_qsv"    # Use Intel QSV codec for video
     FRAMERATE = 29.97           # Frame rate
     VIDEO_FILETYPES = video_filetypes
 
@@ -24,7 +24,14 @@ class VideoCompressor:
             (
                 ffmpeg
                 .input(input_file)
-                .output(output_file, video_bitrate=bitrate, vcodec=video_codec, r=framerate)
+                .output(
+                    output_file,
+                    video_bitrate=bitrate,
+                    vcodec=video_codec,
+                    r=framerate,
+                    # QSV-specific options
+                    preset="medium",  # Adjust the preset to balance speed and quality
+                )
                 .global_args('-loglevel', 'error')  # Suppress info, show only errors
                 .run()
             )
@@ -33,7 +40,7 @@ class VideoCompressor:
             print(f"An error occurred: {e.stderr.decode()}")
 
     @classmethod
-    def compress_videos_in_directory(self, input_directory, video_codec="h264", framerate=30):
+    def compress_videos_in_directory(self, input_directory, video_codec=VIDEO_CODEC, framerate=30):
         # Create a timestamped output directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_directory = f"./output_{timestamp}"
