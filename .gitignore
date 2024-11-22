@@ -6,4 +6,6 @@
 /ffplay.exe
 /ffprobe.exe
 /output_20241113_182006
+*.mp4
 /ui/__pycache__
+*.pyc
