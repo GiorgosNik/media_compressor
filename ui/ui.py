@@ -2,9 +2,10 @@ import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from tkinter import StringVar, filedialog
 from threading import Thread
-import time
 import os
 from utils.video.video_compressor import VideoCompressor
+from datetime import datetime
+from utils.video.config import VIDEO_FILETYPES
 
 # Create the main application class
 class CompressorApp(ctk.CTk):
@@ -13,8 +14,11 @@ class CompressorApp(ctk.CTk):
         self.title("GEP Media Compressor")
         self.iconbitmap('./assets/ges.ico')
         self.geometry("500x200")
-        self.directory = None
         self.running = False
+
+        # Tracking time and progress
+        self.start_time = None
+        self.total_files = 0
 
         # Initial UI setup
         self.setup_initial_ui()
@@ -76,8 +80,21 @@ class CompressorApp(ctk.CTk):
 
         # Progress bar
         self.progress_bar = ctk.CTkProgressBar(self, orientation="horizontal", width=400)
-        self.progress_bar.pack(pady=20)
+        self.progress_bar.pack(pady=10)
         self.progress_bar.set(0)
+
+        # Progress details
+        self.elapsed_time_label = ctk.CTkLabel(self, text="Elapsed Time: 00:00:00")
+        self.elapsed_time_label.pack()
+
+        self.eta_label = ctk.CTkLabel(self, text="ETA: --:--:--")
+        self.eta_label.pack()
+
+        self.current_file_label = ctk.CTkLabel(self, text="Current File: None")
+        self.current_file_label.pack()
+
+        self.file_count_label = ctk.CTkLabel(self, text="Processed: 0/0")
+        self.file_count_label.pack()
 
         # Stop button
         self.stop_button = ctk.CTkButton(self, text="Stop Operation", command=self.stop_operation)
@@ -100,26 +117,45 @@ class CompressorApp(ctk.CTk):
 
 
     def compress_videos(self, input_directory):
-        """
-        Compress videos in the selected directory.
-        
-        Args:
-            input_directory (str): Path to the directory containing videos to compress.
-        """
         try:
-            # Define a callback to update the progress bar in the UI
-            def update_progress(progress_ratio):
+            self.start_time = datetime.now()  # Record the start time
+
+            # Define a callback to update the progress bar and labels in the UI
+            def update_progress(progress_ratio, current_file, file_index):
+                # Update progress bar
                 self.progress_bar.set(progress_ratio)
 
-            # Call the VideoCompressor method
+                # Calculate elapsed time
+                elapsed_time = datetime.now() - self.start_time
+                self.elapsed_time_label.configure(text=f"Elapsed Time: {str(elapsed_time).split('.')[0]}")
+
+                # Estimate ETA
+                if progress_ratio > 0:
+                    estimated_total_time = elapsed_time / progress_ratio
+                    eta = estimated_total_time - elapsed_time
+                    self.eta_label.configure(text=f"ETA: {str(eta).split('.')[0]}")
+
+                # Update current file and progress count
+                self.current_file_label.configure(text=f"Current File: {os.path.basename(current_file)}")
+                self.file_count_label.configure(text=f"Processed: {file_index}/{self.total_files}")
+
+            # Calculate total files for progress tracking
+            self.total_files = sum(
+                len([file for file in files if any(file.lower().endswith(ext) for ext in VIDEO_FILETYPES)])
+                for _, _, files in os.walk(input_directory)
+            )
+
+            # Call the VideoCompressor method with the callback
             VideoCompressor.compress_videos_in_directory(
                 input_directory=input_directory,
-                progress_callback=update_progress  # Pass the callback function
+                progress_callback=lambda progress_ratio, current_file, file_index: update_progress(
+                    progress_ratio, current_file, file_index
+                ),
             )
 
             # Notify the user upon successful completion
             if self.running:  # Ensure the operation was not stopped
-                CTkMessagebox(title="Operation Completed" ,message="Operation Completed Successfully!", icon="check").get()
+                CTkMessagebox(title="Operation Completed", message="Operation Completed Successfully!", icon="check").get()
 
         except RuntimeError as e:
             # Notify the user of any errors encountered during compression
