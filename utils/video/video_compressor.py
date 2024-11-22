@@ -2,12 +2,20 @@ import ffmpeg
 import os
 import tqdm
 from datetime import datetime
+import yaml
 
 class VideoCompressor:
     # Conversion parameters
     VIDEO_CODEC = "libx264"     # Video codec
     FRAMERATE = 29.97           # Frame rate
-    INPUT_DIRECTORY = "."       # Current directory as input
+    
+    # Path to the YAML file
+    yaml_file = "config.yaml"
+
+    # Load video file extensions from the YAML file
+    with open(yaml_file, 'r') as file:
+        yaml_data = yaml.safe_load(file)
+        VIDEO_FILETYPES = yaml_data.get('video_filetypes', [])
 
     def __get_bitrate(self, input_file):
         """Get the original bitrate of a video and return 1/5th of it, rounded up to the nearest 100Kbps."""
@@ -34,14 +42,14 @@ class VideoCompressor:
         except ffmpeg.Error as e:
             print(f"An error occurred: {e.stderr.decode()}")
 
-    def compress_videos_in_directory(self, input_directory=INPUT_DIRECTORY, video_codec=VIDEO_CODEC, framerate=FRAMERATE):
+    def compress_videos_in_directory(self, input_directory, video_codec=VIDEO_CODEC, framerate=FRAMERATE):
         # Create a timestamped output directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_directory = f"./output_{timestamp}"
         os.makedirs(output_directory, exist_ok=True)
         
         # Get the list of video files
-        video_files = [f for f in os.listdir(input_directory) if f.lower().endswith(".mp4")]
+        video_files = [f for f in os.listdir(input_directory) if any(f.lower().endswith(ext) for ext in self.VIDEO_FILETYPES)]        
         
         # Set up the progress bar
         with tqdm.tqdm(total=len(video_files), desc="Compressing Videos", unit="file") as pbar:
@@ -60,6 +68,3 @@ class VideoCompressor:
                 
                 # Update progress bar
                 pbar.update(1)
-
-    # Run the compression
-    compress_videos_in_directory()

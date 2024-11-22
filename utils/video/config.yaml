@@ -1,0 +1,16 @@
+video_filetypes:
+  - .mp4:
+  - .avi:
+  - .mkv:
+  - .mov:
+  - .wmv:
+  - .flv:
+  - .webm:
+  - .mpeg:
+  - .3gp:
+  - .ogv:
+  - .m4v:
+  - .ts:
+  - .vob:
+  - .asf:
+  - .rm:
