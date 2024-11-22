@@ -56,25 +56,38 @@ class VideoCompressor:
             print(f"An error occurred: {e.stderr.decode()}")
 
     @classmethod
-    def compress_videos_in_directory(self, input_directory, framerate=30):
+    def compress_videos_in_directory(cls, input_directory, framerate=30, progress_callback=None):
+        """
+        Compress all videos in a directory.
+        
+        Args:
+            input_directory (str): Path to the input directory containing videos.
+            framerate (float): Target framerate for the compressed videos.
+            progress_callback (callable, optional): Function to update progress. Should accept a single float (progress ratio).
+        """
         # Select the best available codec
-        video_codec = self.select_best_codec()
+        video_codec = cls.select_best_codec()
 
         # Create a timestamped output directory
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_directory = f"./output_{timestamp}"
         os.makedirs(output_directory, exist_ok=True)
 
-        # Walk through all files and directories recursively
+        # Walk through all files and directories recursively to gather video files
         video_files = []
         for root, _, files in os.walk(input_directory):
             for file in files:
                 if any(file.lower().endswith(ext) for ext in VIDEO_FILETYPES):
                     video_files.append(os.path.join(root, file))
 
+        # If no video files are found, raise an exception
+        if not video_files:
+            raise RuntimeError("No video files found in the selected directory.")
+
         # Set up the progress bar
-        with tqdm.tqdm(total=len(video_files), desc="Compressing Videos", unit="file") as pbar:
-            for input_file in video_files:
+        total_files = len(video_files)
+        with tqdm.tqdm(total=total_files, desc="Compressing Videos", unit="file") as pbar:
+            for idx, input_file in enumerate(video_files):
                 # Compute relative path to retain directory structure
                 relative_path = os.path.relpath(input_file, input_directory)
                 output_file = os.path.join(output_directory, relative_path)
@@ -83,13 +96,20 @@ class VideoCompressor:
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
                 # Calculate the dynamic bitrate
-                bitrate = self.__get_bitrate(input_file)
+                bitrate = cls.__get_bitrate(input_file)
 
-                # Update progress bar with current video name
+                # Update progress bar with the current video name
                 pbar.set_postfix({"Current Video": os.path.basename(input_file), "Bitrate": bitrate})
 
                 # Compress the video
-                self.__compress_video(input_file, output_file, bitrate, video_codec, framerate)
+                cls.__compress_video(input_file, output_file, bitrate, video_codec, framerate)
 
                 # Update progress bar
                 pbar.update(1)
+
+                # Call the progress callback if provided
+                if progress_callback:
+                    progress_callback((idx + 1) / total_files)  # Progress ratio (0 to 1)
+
+        print(f"All videos have been compressed. Output directory: {output_directory}")
+

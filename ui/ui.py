@@ -4,13 +4,14 @@ from tkinter import StringVar, filedialog
 from threading import Thread
 import time
 import os
+from utils.video.video_compressor import VideoCompressor
 
 # Create the main application class
 class CompressorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("GEP Media Compressor")
-        self.iconbitmap('./assets/gep.ico')
+        self.iconbitmap('./assets/ges.ico')
         self.geometry("500x200")
         self.directory = None
         self.running = False
@@ -83,17 +84,52 @@ class CompressorApp(ctk.CTk):
         self.stop_button.pack(pady=10)
 
     def run_application(self):
-        # Simulate a process with progress updates
-        for i in range(101):
-            if not self.running:
-                break
-            time.sleep(0.05)  # Simulating work
-            self.progress_bar.set(i / 100)  # Update progress bar
+        if not self.directory:
+            CTkMessagebox(title="Error", message="Please select a directory before starting.", icon="cancel").get()
+            return
 
-        if self.running:
-            CTkMessagebox(message="Operation Completed", icon="check").get()
+        if not os.path.isdir(self.directory):
+            CTkMessagebox(title="Error", message="The selected directory is not valid.", icon="cancel").get()
+            return
+
+        self.running = True
+        self.setup_running_ui()
+
+        # Start compression in a separate thread
+        Thread(target=self.compress_videos, args=(self.directory,)).start()
+
+
+    def compress_videos(self, input_directory):
+        """
+        Compress videos in the selected directory.
+        
+        Args:
+            input_directory (str): Path to the directory containing videos to compress.
+        """
+        try:
+            # Define a callback to update the progress bar in the UI
+            def update_progress(progress_ratio):
+                self.progress_bar.set(progress_ratio)
+
+            # Call the VideoCompressor method
+            VideoCompressor.compress_videos_in_directory(
+                input_directory=input_directory,
+                progress_callback=update_progress  # Pass the callback function
+            )
+
+            # Notify the user upon successful completion
+            if self.running:  # Ensure the operation was not stopped
+                CTkMessagebox(title="Operation Completed" ,message="Operation Completed Successfully!", icon="check").get()
+
+        except RuntimeError as e:
+            # Notify the user of any errors encountered during compression
+            CTkMessagebox(title="Runtime Error", message=f"Error: {str(e)}", icon="cancel").get()
+
+        finally:
+            # Reset the UI to its initial state, regardless of success or failure
             self.setup_initial_ui()
 
+            
     def stop_operation(self):
         # Stop the running process
         self.running = False
