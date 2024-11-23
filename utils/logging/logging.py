@@ -7,7 +7,7 @@ def setup_logging():
     """
     logging.basicConfig(
         level=logging.DEBUG,  # Set root logger level
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
         handlers=[
             logging.StreamHandler(),  # Print logs to console
             logging.FileHandler('app.log', mode='a')  # Save logs to a file
