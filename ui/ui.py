@@ -4,6 +4,7 @@ from tkinter import StringVar, filedialog
 from threading import Thread
 import os
 from utils.video.video_compressor import VideoCompressor
+from utils.handler.handler import Handler
 from datetime import datetime
 from utils.video.config import VIDEO_FILETYPES
 
@@ -146,7 +147,7 @@ class CompressorApp(ctk.CTk):
             )
 
             # Call the VideoCompressor method with the callback
-            VideoCompressor.compress_videos_in_directory(
+            Handler.start_compression(
                 input_directory=input_directory,
                 progress_callback=lambda progress_ratio, current_file, file_index: update_progress(
                     progress_ratio, current_file, file_index
