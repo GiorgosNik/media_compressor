@@ -113,7 +113,7 @@ class VideoCompressor:
         for idx, input_file in enumerate(video_files, start=0):
             # Update progress
             if progress_callback:
-                progress_callback(idx / total_files, input_file, idx)
+                progress_callback(idx / total_files, input_file, idx, total_files)
             
             # Calculate output file path
             relative_path = os.path.relpath(input_file, input_directory)
@@ -128,4 +128,4 @@ class VideoCompressor:
             
             
         if progress_callback:
-                progress_callback(total_files, "", total_files)
+                progress_callback(1, "", total_files, total_files)
