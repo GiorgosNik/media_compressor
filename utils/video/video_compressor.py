@@ -1,11 +1,14 @@
 import ffmpeg
 import os
-from datetime import datetime
 from utils.video.config import VIDEO_FILETYPES
 from utils.video.config import VIDEO_CODECS
+from utils.logging.logging import setup_logging
+import logging
 
 class VideoCompressor:
     FRAMERATE = 29.97
+    setup_logging()  # Set up logging configuration
+    LOGGER = logging.getLogger(__name__)
     
     @classmethod
     def is_video_proccessed(cls, file_path):
@@ -17,7 +20,7 @@ class VideoCompressor:
             else:
                 return False
         except ffmpeg.Error as e:
-            print(f"Error checking metadata: {e.stderr.decode()}")
+            cls.LOGGER.error(f"Error while parsing metadata for video:{file_path}. ERROR MESSGAGE: {str(e)}")
             return False
 
     @classmethod
@@ -34,7 +37,8 @@ class VideoCompressor:
         try:
             ffmpeg.input('dummy').output('dummy.mp4', vcodec=codec).global_args('-loglevel', 'error').compile()
             return True
-        except ffmpeg.Error:
+        except ffmpeg.Error as e:
+            cls.LOGGER.error(f"Error while detecting CODEC:{codec}. ERROR MESSGAGE: {str(e)}")
             return False
     
     @classmethod
@@ -63,13 +67,14 @@ class VideoCompressor:
                     .global_args('-loglevel', 'error')  # Suppress info, show only errors
                     .run()
                 )
-                print(f"Compressed file saved as {output_file}")
+                cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
         except ffmpeg.Error as e:
-            print(f"An error occurred: {e.stderr.decode()}")
+            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSGAGE: {e.stderr.decode()}")
             
     @classmethod
     def __compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
+
                 (
                     ffmpeg
                     .input(input_file)
@@ -83,9 +88,10 @@ class VideoCompressor:
                     .global_args('-loglevel', 'error')  # Suppress info, show only errors
                     .run()
                 )
-                print(f"Compressed file saved as {output_file}")
+                cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
         except ffmpeg.Error as e:
-            print(f"An error occurred: {e.stderr.decode()}")
+            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSGAGE: {e.stderr.decode()}")
+
 
     @classmethod
     def __compress_video(cls, input_file, output_file, bitrate, video_codec, framerate=FRAMERATE):
@@ -97,6 +103,8 @@ class VideoCompressor:
 
     @classmethod
     def compress_videos_in_directory(cls, input_directory, output_directory, progress_callback=None, framerate=30):
+        cls.LOGGER.info(f"Started compressing directory:{input_directory}")
+        
         # Select the best available codec
         video_codec = cls.select_best_codec()
 
@@ -129,3 +137,4 @@ class VideoCompressor:
             
         if progress_callback:
                 progress_callback(1, "", total_files, total_files)
+        cls.LOGGER.info(f"Finished compressing directory:{input_directory}")

@@ -3,10 +3,8 @@ from CTkMessagebox import CTkMessagebox
 from tkinter import StringVar, filedialog
 from threading import Thread
 import os
-from utils.video.video_compressor import VideoCompressor
 from utils.handler.handler import Handler
 from datetime import datetime
-from utils.video.config import VIDEO_FILETYPES
 
 # Create the main application class
 class CompressorApp(ctk.CTk):

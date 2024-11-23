@@ -6,7 +6,8 @@ Todo:
   ☐ Add Build Automation
   ☐ Add Code Coverage
   ☐ Add Image handling
-  ☐ Fix error on start
+  ✔ Fix error on start @done(24-11-23 13:48)
+  ✔ Add logging @done(24-11-23 14:53)
 
 
 
