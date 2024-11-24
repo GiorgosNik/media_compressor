@@ -1,6 +1,6 @@
 Todo:
   ☐ Improve ETA handling
-  ☐ Add tests
+  ✔ Add tests @done(24-11-24 14:50)
   ✔ Add documentation @done(24-11-24 09:44)
   ☐ Add GitHub Actions
   ☐ Add Build Automation
