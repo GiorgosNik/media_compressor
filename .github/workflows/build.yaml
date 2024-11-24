@@ -26,10 +26,17 @@ jobs:
 
   test_ubuntu:
     needs: test_windows
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Install ffmpeg
+      run: |
+        sudo apt install software-properties-common
+        sudo apt update
+        sudo add-apt-repository ppa:jonathonf/ffmpeg-4
+        sudo apt install ffmpeg
 
     - name: Set up Python
       uses: actions/setup-python@v4
