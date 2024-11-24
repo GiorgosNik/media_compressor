@@ -5,7 +5,8 @@ import os
 import ffmpeg
 from utils.video.video_compressor import VideoCompressor
 from unittest.mock import MagicMock
-
+import os
+from pathlib import Path
 
 # Test setup
 @pytest.fixture
@@ -224,6 +225,7 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
     # Assert
     VideoCompressor.compress_video.assert_called()
 
+
 def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg, mock_logger):
     # Arrange
     input_directory = "path/to/input"
@@ -233,10 +235,16 @@ def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg, mock_logg
     VideoCompressor.get_bitrate = mock.MagicMock(return_value="1000K")
     VideoCompressor.compress_video.side_effect = Exception("Compression error")
 
+    # Normalize paths to always use forward slashes
+    normalized_input_directory = str(Path(input_directory)).replace('\\', '/')
+
+    expected_message = f"Uncaught error occurred while compressing:{normalized_input_directory}/video1.mp4. ERROR MESSGAGE: Compression error"
+
     # Act
     VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
 
+    # Normalize both expected and actual messages to use forward slashes for comparison
+    actual_message = mock_logger.error.call_args[0][0].replace('\\', '/')
+
     # Assert
-    mock_logger.error.assert_called_once_with(
-        "Uncaught error occurred while compressing:path/to/input\\video1.mp4. ERROR MESSGAGE: Compression error"
-    )
+    assert expected_message == actual_message, f"Expected: {expected_message}, but got: {actual_message}"
