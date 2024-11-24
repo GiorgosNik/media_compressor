@@ -22,7 +22,7 @@ def mock_image_open():
     with mock.patch('PIL.Image.open') as mock_open:
         yield mock_open
 
-@patch("utils.images.image_compressor.piexif.load")  # Adjust path based on actual import
+@patch("utils.images.image_compressor.piexif.load")
 @patch("utils.images.image_compressor.Image.open")
 @patch("utils.images.image_compressor.ImageCompressor.LOGGER")
 def test_is_processed(mock_logger, mock_image_open, mock_piexif_load):
@@ -89,11 +89,10 @@ def test_compress_image(mock_logger, mock_image_open):
     input_file = "path/to/input.jpg"
     output_file = "path/to/output.jpg"
     
-    # Mock the image object returned by Image.open
     mock_img = MagicMock()
-    mock_img.width = 800  # Set a concrete width
-    mock_img.height = 600  # Set a concrete height
-    mock_resized_img = MagicMock()  # Mock the resized image
+    mock_img.width = 800 
+    mock_img.height = 600
+    mock_resized_img = MagicMock()
     mock_img.resize.return_value = mock_resized_img
     mock_image_open.return_value.__enter__.return_value = mock_img
 
