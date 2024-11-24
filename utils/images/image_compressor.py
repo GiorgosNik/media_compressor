@@ -2,6 +2,7 @@ import os
 from PIL import Image
 from utils.logging.logging import setup_logging
 from utils.images.config import IMAGE_FILETYPES
+import piexif
 import logging
 
 class ImageCompressor:
@@ -30,6 +31,7 @@ class ImageCompressor:
 
                 # Compress image
                 cls.__compress_image(input_file, output_file)
+                cls.__add_metadata(output_file)
 
             except Exception as e:
                 cls.LOGGER.error(f"Uncaught error occurred while compressing image: {input_file}. ERROR MESSAGE: {str(e)}")
@@ -44,9 +46,37 @@ class ImageCompressor:
         image_files = []
         for root, _, files in os.walk(input_directory):
             for file in files:
-                if any(file.lower().endswith(ext) for ext in IMAGE_FILETYPES):
+                if any(file.lower().endswith(ext) for ext in IMAGE_FILETYPES) and not cls.__is_processed(os.path.join(root, file)):
                     image_files.append(os.path.join(root, file))
         return image_files
+
+    @classmethod
+    def __add_metadata(cls, file_path):
+        try:
+            with Image.open(file_path) as img:
+                if file_path.lower().endswith(('.jpg', '.jpeg', '.tiff')):
+                    exif_dict = piexif.load(img.info.get("exif", file_path))
+                    exif_dict["0th"][piexif.ImageIFD.ImageDescription] = b"Processed"
+                    exif_bytes = piexif.dump(exif_dict)
+                    img.save(file_path, "jpeg", exif=exif_bytes)
+                elif file_path.lower().endswith(".png"):
+                    img.info["Comment"] = "Processed"
+                    img.save(file_path, "png")
+        except Exception as e:
+            cls.LOGGER.error(f"An error occurred while adding metadata to image: {file_path}. ERROR MESSAGE: {str(e)}")
+
+    @classmethod
+    def __is_processed(cls, file_path):
+        try:
+            with Image.open(file_path) as img:
+                if file_path.lower().endswith(('.jpg', '.jpeg', '.tiff')):
+                    exif_data = piexif.load(img.info.get("exif", file_path))
+                    return b"Processed" in exif_data["0th"].get(piexif.ImageIFD.ImageDescription, b"")
+                elif file_path.lower().endswith(".png"):
+                    return img.info.get("Comment") == "Processed"
+        except Exception as e:
+            cls.LOGGER.error(f"An error occurred while reading metadata from image: {file_path}. ERROR MESSAGE: {str(e)}")
+        return False
 
     @classmethod
     def __compress_image(cls, input_file, output_file):
