@@ -2,7 +2,7 @@ Todo:
   ☐ Improve ETA handling
   ✔ Add tests @done(24-11-24 14:50)
   ✔ Add documentation @done(24-11-24 09:44)
-  ☐ Add GitHub Actions
+  ✔ Add GitHub Actions @done(24-11-24 16:29)
   ☐ Add Build Automation
   ✔ Add Code Coverage @done(24-11-24 15:57)
   ✔ Add Image handling @done(24-11-24 10:30)
