@@ -120,7 +120,7 @@ class VideoCompressor:
 
     @classmethod
     def compress_videos_in_directory(cls, input_directory, output_directory, progress_callback=None, framerate=30):
-        cls.LOGGER.info(f"Started compressing directory:{input_directory}")
+        cls.LOGGER.info(f"Started compressing videos in directory:{input_directory}")
         
         # Select the best available codec
         video_codec = cls.select_best_codec()
@@ -151,4 +151,4 @@ class VideoCompressor:
             
         if progress_callback:
                 progress_callback(1, "", total_files, total_files)
-        cls.LOGGER.info(f"Finished compressing directory:{input_directory}")
+        cls.LOGGER.info(f"Finished compressing videos in directory:{input_directory}")
