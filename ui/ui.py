@@ -8,7 +8,7 @@ from datetime import datetime
 
 # Create the main application class
 class CompressorApp(ctk.CTk):
-    def init__(self):
+    def __init__(self):
         super().__init__()
         self.title("GEP Media Compressor")
         self.iconbitmap('./assets/ges.ico')
