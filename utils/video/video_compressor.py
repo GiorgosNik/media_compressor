@@ -19,12 +19,12 @@ class VideoCompressor:
                 return True
             else:
                 return False
-        except ffmpeg.Error as e:
+        except Exception as e:
             cls.LOGGER.error(f"Error while parsing metadata for video:{file_path}. ERROR MESSGAGE: {e.stderr.decode()}")
             return False
 
     @classmethod
-    def __get_bitrate(cls, input_file):
+    def get_bitrate(cls, input_file):
         try:
             """Get the original bitrate of a video and return 1/5th of it, rounded up to the nearest 100Kbps."""
             probe = ffmpeg.probe(input_file)
@@ -36,25 +36,25 @@ class VideoCompressor:
             raise e
 
     @classmethod
-    def __is_codec_available(cls, codec):
+    def is_codec_available(cls, codec):
         """Check if the specified codec is available on the system."""
         try:
             ffmpeg.input('dummy').output('dummy.mp4', vcodec=codec).global_args('-loglevel', 'error').compile()
             return True
         except ffmpeg.Error as e:
-            cls.LOGGER.error(f"Error while detecting CODEC:{codec}. ERROR MESSGAGE: {str(e)}")
+            cls.LOGGER.error(f"Error while detecting CODEC:{codec}. ERROR MESSGAGE: {e.stderr.decode()}")
             return False
     
     @classmethod
     def select_best_codec(cls):
         """Select the best available codec."""
         for codec in VIDEO_CODECS:
-            if cls.__is_codec_available(codec):
+            if cls.is_codec_available(codec):
                 return codec
         raise RuntimeError("No supported video codec is available.")
 
     @classmethod
-    def __compress_video_qsv(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
+    def compress_video_qsv(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
                 (
                     ffmpeg
@@ -76,7 +76,7 @@ class VideoCompressor:
             cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSGAGE: {e.stderr.decode()}")
             
     @classmethod
-    def __compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
+    def compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
 
                 (
@@ -98,15 +98,15 @@ class VideoCompressor:
 
 
     @classmethod
-    def __compress_video(cls, input_file, output_file, bitrate, video_codec, framerate=FRAMERATE):
+    def compress_video(cls, input_file, output_file, bitrate, video_codec, framerate=FRAMERATE):
         if video_codec == "h264_qsv":
-            cls.__compress_video_qsv(input_file, output_file, bitrate, framerate)
+            cls.compress_video_qsv(input_file, output_file, bitrate, framerate)
         else:
-            cls.__compress_video_cpu(input_file, output_file, bitrate, framerate)
+            cls.compress_video_cpu(input_file, output_file, bitrate, framerate)
             
 
     @classmethod
-    def __get_video_files(cls, input_directory):
+    def get_video_files(cls, input_directory):
         """Get a list of video files in the specified directory."""
         video_files = []
         for root, _, files in os.walk(input_directory):
@@ -126,7 +126,7 @@ class VideoCompressor:
         video_codec = cls.select_best_codec()
 
         # Gather video files
-        video_files = cls.__get_video_files(input_directory)
+        video_files = cls.get_video_files(input_directory)
 
         # Process each video file
         total_files = len(video_files)
@@ -142,10 +142,10 @@ class VideoCompressor:
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
                 # Calculate bitrate
-                bitrate = cls.__get_bitrate(input_file)
+                bitrate = cls.get_bitrate(input_file)
 
                 # Compress video
-                cls.__compress_video(input_file, output_file, bitrate, video_codec, framerate)
+                cls.compress_video(input_file, output_file, bitrate, video_codec, framerate)
             except Exception as e:
                 cls.LOGGER.error(f"Uncaught error occurred while compressing:{input_file}. ERROR MESSGAGE: {str(e)}")
             

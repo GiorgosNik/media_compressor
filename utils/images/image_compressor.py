@@ -14,7 +14,7 @@ class ImageCompressor:
         cls.LOGGER.info(f"Started compressing images in directory: {input_directory}")
 
         # Gather image files
-        image_files = cls.__get_image_files(input_directory)
+        image_files = cls.get_image_files(input_directory)
 
         # Process each image file
         total_files = len(image_files)
@@ -30,8 +30,8 @@ class ImageCompressor:
                 os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
                 # Compress image
-                cls.__compress_image(input_file, output_file)
-                cls.__add_metadata(output_file)
+                cls.compress_image(input_file, output_file)
+                cls.add_metadata(output_file)
 
             except Exception as e:
                 cls.LOGGER.error(f"Uncaught error occurred while compressing image: {input_file}. ERROR MESSAGE: {str(e)}")
@@ -41,17 +41,17 @@ class ImageCompressor:
         cls.LOGGER.info(f"Finished compressing images in directory: {input_directory}")
 
     @classmethod
-    def __get_image_files(cls, input_directory):
+    def get_image_files(cls, input_directory):
         """Get a list of image files in the specified directory."""
         image_files = []
         for root, _, files in os.walk(input_directory):
             for file in files:
-                if any(file.lower().endswith(ext) for ext in IMAGE_FILETYPES) and not cls.__is_processed(os.path.join(root, file)):
+                if any(file.lower().endswith(ext) for ext in IMAGE_FILETYPES) and not cls.is_processed(os.path.join(root, file)):
                     image_files.append(os.path.join(root, file))
         return image_files
 
     @classmethod
-    def __add_metadata(cls, file_path):
+    def add_metadata(cls, file_path):
         try:
             with Image.open(file_path) as img:
                 if file_path.lower().endswith(('.jpg', '.jpeg', '.tiff')):
@@ -66,7 +66,7 @@ class ImageCompressor:
             cls.LOGGER.error(f"An error occurred while adding metadata to image: {file_path}. ERROR MESSAGE: {str(e)}")
 
     @classmethod
-    def __is_processed(cls, file_path):
+    def is_processed(cls, file_path):
         try:
             with Image.open(file_path) as img:
                 if file_path.lower().endswith(('.jpg', '.jpeg', '.tiff')):
@@ -79,7 +79,7 @@ class ImageCompressor:
         return False
 
     @classmethod
-    def __compress_image(cls, input_file, output_file):
+    def compress_image(cls, input_file, output_file):
         try:
             with Image.open(input_file) as img:
                 # Calculate new size
