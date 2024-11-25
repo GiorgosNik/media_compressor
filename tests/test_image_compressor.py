@@ -118,32 +118,51 @@ def test_compress_image_error(mock_image_open, mock_logger):
         f"An error occurred while compressing image: {input_file}. ERROR MESSAGE: Compression error"
     )
 
-def test_compress_images_in_directory(mock_os_walk, mock_image_open, mock_logger):
+@mock.patch("utils.images.image_compressor.os.walk")
+@mock.patch("utils.images.image_compressor.Image.open")
+@mock.patch("utils.images.image_compressor.logging.getLogger")
+def test_compress_images_in_directory(mock_get_logger, mock_image_open, mock_os_walk):
     # Arrange
     input_directory = "path/to/input"
     output_directory = "path/to/output"
+    mock_logger = mock.Mock()
+    mock_get_logger.return_value = mock_logger
     mock_os_walk.return_value = [(input_directory, [], ["image1.jpg", "image2.png"])]
-    ImageCompressor.is_processed = mock.MagicMock(return_value=False)
-    ImageCompressor.get_image_files = mock.MagicMock(return_value=["path/to/input/image1.jpg", "path/to/input/image2.png"])
-    ImageCompressor.compress_image = mock.MagicMock()
-    ImageCompressor.add_metadata = mock.MagicMock()
+    mock_image = mock.Mock()
+    mock_image.format = "JPEG"
+    mock_image_open.return_value.__enter__.return_value = mock_image
+    with mock.patch.object(ImageCompressor, "is_processed", return_value=False), \
+         mock.patch.object(ImageCompressor, "compress_image") as mock_compress_image, \
+         mock.patch.object(ImageCompressor, "add_metadata") as mock_add_metadata:
 
-    # Act
-    ImageCompressor.compress_images_in_directory(input_directory, output_directory)
+        # Act
+        ImageCompressor.compress_images_in_directory(input_directory, output_directory)
 
-    # Assert
-    ImageCompressor.compress_image.assert_called()
-    ImageCompressor.add_metadata.assert_called()
-    mock_logger.info.assert_called_with(f"Finished compressing images in directory: {input_directory}")
+        # Assert
+        mock_compress_image.assert_any_call(
+            os.path.join(input_directory, "image1.jpg"),
+            os.path.join(output_directory, "image1.jpg")
+        )
+        mock_compress_image.assert_any_call(
+            os.path.join(input_directory, "image2.png"),
+            os.path.join(output_directory, "image2.png")
+        )
+        mock_add_metadata.assert_called()
+        mock_logger.info.assert_any_call(f"Finished compressing images in directory: {input_directory}")
 
-def test_compress_images_in_directory_error(mock_os_walk, mock_image_open, mock_logger):
+@mock.patch("utils.images.image_compressor.os.walk")
+@mock.patch("utils.images.image_compressor.Image.open")
+@mock.patch("utils.images.image_compressor.logging.getLogger")
+def test_compress_images_in_directory_error(mock_get_logger, mock_image_open, mock_os_walk):
     # Arrange
     input_directory = "path/to/input"
     output_directory = "path/to/output"
+    mock_logger = mock.Mock()
+    mock_get_logger.return_value = mock_logger
     mock_os_walk.return_value = [(input_directory, [], ["image1.jpg"])]
     ImageCompressor.is_processed = mock.MagicMock(return_value=False)
     ImageCompressor.get_image_files = mock.MagicMock(return_value=["path/to/input/image1.jpg"])
-    ImageCompressor.compress_image.side_effect = Exception("Compression error")
+    ImageCompressor.compress_image = mock.MagicMock(side_effect=Exception("Compression error"))
 
     # Act
     ImageCompressor.compress_images_in_directory(input_directory, output_directory)

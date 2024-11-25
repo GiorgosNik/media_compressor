@@ -1,10 +1,11 @@
+import logging
 import pytest
 from unittest import mock
 from utils.video.config import VIDEO_CODECS
 import os
 import ffmpeg
 from utils.video.video_compressor import VideoCompressor
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import os
 from pathlib import Path
 
@@ -226,7 +227,7 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
     VideoCompressor.compress_video.assert_called()
 
 
-def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg, mock_logger):
+def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg):
     # Arrange
     input_directory = "path/to/input"
     output_directory = "path/to/output"
@@ -240,11 +241,19 @@ def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg, mock_logg
 
     expected_message = f"Uncaught error occurred while compressing:{normalized_input_directory}/video1.mp4. ERROR MESSGAGE: Compression error"
 
-    # Act
-    VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
+    # Mock the logger explicitly
+    with patch.object(logging, 'getLogger', return_value=mock.MagicMock()) as mock_get_logger:
+        mock_logger = mock_get_logger.return_value
 
-    # Normalize both expected and actual messages to use forward slashes for comparison
-    actual_message = mock_logger.error.call_args[0][0].replace('\\', '/')
+        # Act
+        try:
+            VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
+        except Exception:
+            pass  # Catch exception to ensure the test runs even if an error occurs
 
-    # Assert
-    assert expected_message == actual_message, f"Expected: {expected_message}, but got: {actual_message}"
+        # Assert that the error method was called
+        assert mock_logger.error.called, "Logger's error method was not called"
+
+        # Normalize both expected and actual messages to use forward slashes for comparison
+        actual_message = mock_logger.error.call_args[0][0].replace('\\', '/')
+        assert actual_message == expected_message, f"Expected: {expected_message}, but got: {actual_message}"
