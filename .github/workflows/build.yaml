@@ -66,7 +66,7 @@ jobs:
   build_and_release_installer:
     needs: test_ubuntu # Run only after the Windows tests pass
     runs-on: windows-latest
-    # if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
+    if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
 
     steps:
     - name: Checkout repository
