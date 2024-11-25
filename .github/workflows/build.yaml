@@ -64,9 +64,9 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build_and_release_installer:
-    needs: test_windows # Run only after the Windows tests pass
+    needs: test_ubuntu # Run only after the Windows tests pass
     runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
+    # if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
 
     steps:
     - name: Checkout repository
@@ -86,12 +86,10 @@ jobs:
       run: |
         pyinstaller --onefile --icon=./assets/ges.ico --windowed main.py
 
-    - name: Install Inno Setup
-      uses: casperklein/setup-innosetup@v1
-
-    - name: Build the Installer
-      run: |
-        iscc /Odist /F"GEP Media Compressor Installer" .\utils\setup\setup.iss
+    - name: Compile .ISS to .EXE Installer
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      with:
+        path: utils\setup\setup.iss
 
     - name: Upload Installer to Release
       uses: softprops/action-gh-release@v1
