@@ -6,11 +6,12 @@ import piexif
 import logging
 
 class ImageCompressor:
-    setup_logging()  # Set up logging configuration
-    LOGGER = logging.getLogger(__name__)
+    LOGGER = None
 
     @classmethod
     def compress_images_in_directory(cls, input_directory, output_directory, progress_callback=None):
+        setup_logging(output_directory)
+        cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info(f"Started compressing images in directory: {input_directory}")
 
         # Gather image files

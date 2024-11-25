@@ -10,3 +10,6 @@
 *.pyc
 app.log
 .coverage
+main.spec
+build/
+dist/

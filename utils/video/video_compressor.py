@@ -7,8 +7,7 @@ import logging
 
 class VideoCompressor:
     FRAMERATE = 29.97
-    setup_logging()  # Set up logging configuration
-    LOGGER = logging.getLogger(__name__)
+    LOGGER = None
     
     @classmethod
     def is_video_proccessed(cls, file_path):
@@ -120,6 +119,9 @@ class VideoCompressor:
 
     @classmethod
     def compress_videos_in_directory(cls, input_directory, output_directory, progress_callback=None, framerate=30):
+        setup_logging(output_directory)
+        cls.LOGGER = logging.getLogger(__name__)
+        
         cls.LOGGER.info(f"Started compressing videos in directory:{input_directory}")
         
         # Select the best available codec
