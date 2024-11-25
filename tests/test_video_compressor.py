@@ -235,25 +235,14 @@ def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg):
     VideoCompressor.is_video_proccessed = mock.MagicMock(return_value=False)
     VideoCompressor.get_bitrate = mock.MagicMock(return_value="1000K")
     VideoCompressor.compress_video.side_effect = Exception("Compression error")
-
-    # Normalize paths to always use forward slashes
     normalized_input_directory = str(Path(input_directory)).replace('\\', '/')
-
     expected_message = f"Uncaught error occurred while compressing:{normalized_input_directory}/video1.mp4. ERROR MESSGAGE: Compression error"
 
-    # Mock the logger explicitly
     with patch.object(logging, 'getLogger', return_value=mock.MagicMock()) as mock_get_logger:
         mock_logger = mock_get_logger.return_value
 
-        # Act
-        try:
-            VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
-        except Exception:
-            pass  # Catch exception to ensure the test runs even if an error occurs
+        VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
 
-        # Assert that the error method was called
-        assert mock_logger.error.called, "Logger's error method was not called"
-
-        # Normalize both expected and actual messages to use forward slashes for comparison
+        # Assert
         actual_message = mock_logger.error.call_args[0][0].replace('\\', '/')
         assert actual_message == expected_message, f"Expected: {expected_message}, but got: {actual_message}"
