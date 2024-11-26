@@ -1,3 +1,4 @@
+import platform
 import subprocess
 import ffmpeg
 import os
@@ -9,11 +10,11 @@ import logging
 class VideoCompressor:
     FRAMERATE = 29.97
     LOGGER = None
-    
+
     @classmethod
     def is_video_proccessed(cls, file_path):
         try:
-        # Get the metadata using ffprobe
+            # Get the metadata using ffprobe
             vid = ffmpeg.probe(file_path)['format']['tags']
             if vid.get('comment') == 'compressed':
                 return True
@@ -44,7 +45,7 @@ class VideoCompressor:
         except ffmpeg.Error as e:
             cls.LOGGER.error(f"Error while detecting CODEC:{codec}. ERROR MESSGAGE: {e.stderr.decode()}")
             return False
-    
+
     @classmethod
     def select_best_codec(cls):
         """Select the best available codec."""
@@ -56,9 +57,8 @@ class VideoCompressor:
     @classmethod
     def compress_video_qsv(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
-            (
-                ffmpeg
-                .input(input_file)
+            args = (
+                ffmpeg.input(input_file)
                 .output(
                     output_file,
                     video_bitrate=bitrate,
@@ -67,16 +67,19 @@ class VideoCompressor:
                     metadata="comment=compressed",
                     preset="medium",  # QSV-specific options
                 )
-                .global_args('-loglevel', 'error')  # Suppress info, show only errors
-                .run(
-                    creationflags=subprocess.CREATE_NO_WINDOW  # Suppress console window
-                )
+                .global_args("-loglevel", "error")  # Suppress info, show only errors
             )
+            run_kwargs = {}
+            if platform.system() == "Windows":
+                run_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+
+            args.run(**run_kwargs)
             cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
         except ffmpeg.Error as e:
-            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}")
+            cls.LOGGER.error(
+                f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}"
+            )
 
-            
     @classmethod
     def compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
@@ -99,14 +102,12 @@ class VideoCompressor:
         except ffmpeg.Error as e:
             cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}")
 
-
     @classmethod
     def compress_video(cls, input_file, output_file, bitrate, video_codec, framerate=FRAMERATE):
         if video_codec == "h264_qsv":
             cls.compress_video_qsv(input_file, output_file, bitrate, framerate)
         else:
             cls.compress_video_cpu(input_file, output_file, bitrate, framerate)
-            
 
     @classmethod
     def get_video_files(cls, input_directory):
@@ -125,9 +126,9 @@ class VideoCompressor:
     def compress_videos_in_directory(cls, input_directory, output_directory, progress_callback=None, framerate=30):
         setup_logging(output_directory)
         cls.LOGGER = logging.getLogger(__name__)
-        
+
         cls.LOGGER.info(f"Started compressing videos in directory:{input_directory}")
-        
+
         # Select the best available codec
         video_codec = cls.select_best_codec()
 
@@ -154,7 +155,7 @@ class VideoCompressor:
                 cls.compress_video(input_file, output_file, bitrate, video_codec, framerate)
             except Exception as e:
                 cls.LOGGER.error(f"Uncaught error occurred while compressing:{input_file}. ERROR MESSGAGE: {str(e)}")
-            
+
         if progress_callback:
-                progress_callback(1, "", total_files, total_files)
+            progress_callback(1, "", total_files, total_files)
         cls.LOGGER.info(f"Finished compressing videos in directory:{input_directory}")
