@@ -227,22 +227,24 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
     VideoCompressor.compress_video.assert_called()
 
 
-def test_compress_videos_in_directory_error(mock_os_walk, mock_ffmpeg):
+def test_compress_video_qsv_error(mock_ffmpeg, mock_logger):
     # Arrange
-    input_directory = "path/to/input"
-    output_directory = "path/to/output"
-    mock_os_walk.return_value = [(input_directory, [], ["video1.mp4"])]
-    VideoCompressor.is_video_proccessed = mock.MagicMock(return_value=False)
-    VideoCompressor.get_bitrate = mock.MagicMock(return_value="1000K")
-    VideoCompressor.compress_video.side_effect = Exception("Compression error")
-    normalized_input_directory = str(Path(input_directory)).replace('\\', '/')
-    expected_message = f"Uncaught error occurred while compressing:{normalized_input_directory}/video1.mp4. ERROR MESSGAGE: Compression error"
+    input_file = "path/to/input.mp4"
+    output_file = "path/to/output.mp4"
+    bitrate = "1000K"
+    framerate = 30
+    _, mock_input = mock_ffmpeg
+    mock_error = ffmpeg.Error(
+        "Compression failed",
+        b"mock stdout",
+        b"Compression failed"
+    )
+    mock_input.return_value.output.return_value.global_args.return_value.run.side_effect = mock_error
 
-    with patch.object(logging, 'getLogger', return_value=mock.MagicMock()) as mock_get_logger:
-        mock_logger = mock_get_logger.return_value
+    # Act
+    VideoCompressor.compress_video_qsv(input_file, output_file, bitrate, framerate)
 
-        VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
-
-        # Assert
-        actual_message = mock_logger.error.call_args[0][0].replace('\\', '/')
-        assert actual_message == expected_message, f"Expected: {expected_message}, but got: {actual_message}"
+    # Assert
+    mock_logger.error.assert_called_once_with(
+        f"An error occurred while encoding:{input_file}. ERROR MESSAGE: Compression failed"
+    )

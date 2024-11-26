@@ -10,11 +10,9 @@ Todo:
   ✔ Improve ETA handling @done(24-11-24 17:39)
   ✔ Create build script @done(24-11-25 13:20)
   ✔ Add Build Automation @done(24-11-25 13:20)
+  ✔ Stop FFMPEG popup @done(24-11-26 17:33)
   ☐ Stress test
-
-  
-
-
-
-
-
+  ✔ Update docs @done(24-11-26 17:37)
+  ☐ Add "Show Output" button
+  ☐ Add "Contact Developer" button
+  ☐ Update directory input

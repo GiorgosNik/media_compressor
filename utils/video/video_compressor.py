@@ -1,3 +1,4 @@
+import subprocess
 import ffmpeg
 import os
 from utils.video.config import VIDEO_FILETYPES
@@ -55,45 +56,48 @@ class VideoCompressor:
     @classmethod
     def compress_video_qsv(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
-                (
-                    ffmpeg
-                    .input(input_file)
-                    .output(
-                        output_file,
-                        video_bitrate=bitrate,
-                        vcodec="h264_qsv",
-                        r=framerate,
-                        metadata = "comment=compressed",
-                        # QSV-specific options
-                        preset="medium",  # Adjust the preset to balance speed and quality
-                    )
-                    .global_args('-loglevel', 'error')  # Suppress info, show only errors
-                    .run()
+            (
+                ffmpeg
+                .input(input_file)
+                .output(
+                    output_file,
+                    video_bitrate=bitrate,
+                    vcodec="h264_qsv",
+                    r=framerate,
+                    metadata="comment=compressed",
+                    preset="medium",  # QSV-specific options
                 )
-                cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
+                .global_args('-loglevel', 'error')  # Suppress info, show only errors
+                .run(
+                    creationflags=subprocess.CREATE_NO_WINDOW  # Suppress console window
+                )
+            )
+            cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
         except ffmpeg.Error as e:
-            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSGAGE: {e.stderr.decode()}")
+            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}")
+
             
     @classmethod
     def compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
-
-                (
-                    ffmpeg
-                    .input(input_file)
-                    .output(
-                        output_file,
-                        video_bitrate=bitrate,
-                        vcodec="h264_qsv",
-                        r=framerate,
-                        metadata = "comment=compressed",
-                    )
-                    .global_args('-loglevel', 'error')  # Suppress info, show only errors
-                    .run()
+            (
+                ffmpeg
+                .input(input_file)
+                .output(
+                    output_file,
+                    video_bitrate=bitrate,
+                    vcodec="libx264",  # Adjusted codec for CPU-based compression
+                    r=framerate,
+                    metadata="comment=compressed",
                 )
-                cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
+                .global_args('-loglevel', 'error')  # Suppress info, show only errors
+                .run(
+                    creationflags=subprocess.CREATE_NO_WINDOW  # Suppress console window
+                )
+            )
+            cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
         except ffmpeg.Error as e:
-            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSGAGE: {e.stderr.decode()}")
+            cls.LOGGER.error(f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}")
 
 
     @classmethod

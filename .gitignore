@@ -13,3 +13,4 @@ app.log
 main.spec
 build/
 dist/
+main.exe
