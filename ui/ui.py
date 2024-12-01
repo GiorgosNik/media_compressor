@@ -6,6 +6,7 @@ import os
 from utils.handler.handler import Handler
 from datetime import datetime
 import time
+import webbrowser
 
 
 # Create the main application class
@@ -68,10 +69,21 @@ class CompressorApp(ctk.CTk):
 
         self.widgets["start_button"] = ctk.CTkButton(
             self.widgets["button_frame"],
-            text="Start Application",
+            text="Start Compression",
             command=self.start_application,
         )
         self.widgets["start_button"].pack(side="left", padx=10)
+        
+        # Help button
+        self.widgets["help_button"] = ctk.CTkButton(
+                self,
+                text="?",
+                width=30,               # Width of the button
+                height=30,              # Height of the button
+                corner_radius=50,       # Half the width/height to create a circle
+                command=self.show_help_message,
+            )
+        self.widgets["help_button"].place(x=460, y=18)  # Position at top-right corner
 
     def clear_ui(self):
         """Forget all widgets."""
@@ -88,6 +100,26 @@ class CompressorApp(ctk.CTk):
             self.widgets["dir_input"].delete(0, ctk.END)
             self.widgets["dir_input"].insert(0, directory)
             self.directory = directory
+            
+    def show_help_message(self):
+        option = CTkMessagebox(
+            title="GEP Media Compressor Help",
+            message=(
+                "- Select Directory: Choose a folder with videos.\n"
+                "- Start Application: Begin compressing the videos.\n"
+                "- Stop Operation: Cancel the compression process.\n\n"
+            ),
+            wraplength=280,
+            option_1="Contact Developer",
+            option_2="Get Updates",
+            option_3="View README",
+        ).get()
+        if option == "Contact Developer":
+            webbrowser.open("mailto:giorgosnl17@gmail.com?subject=GEP Compressor: Request for Support")
+        elif option == "Get Updates":
+            webbrowser.open("https://github.com/GiorgosNik/media_compressor/releases")
+        elif option == "View README":
+            webbrowser.open("https://github.com/GiorgosNik/media_compressor/blob/main/README.md")
 
     def start_application(self):
         if not self.directory:
@@ -110,8 +142,6 @@ class CompressorApp(ctk.CTk):
         self.running = True
         self.setup_running_ui()
 
-        # Start the application process in a separate thread
-        Thread(target=self.run_application).start()
 
     def setup_running_ui(self):
         # Forget all widgets
@@ -143,29 +173,9 @@ class CompressorApp(ctk.CTk):
 
         # Stop button
         self.widgets["stop_button"] = ctk.CTkButton(
-            self, text="Stop Operation", command=self.stop_operation
+            self, text="Stop Compression", command=self.stop_operation
         )
         self.widgets["stop_button"].pack(pady=10)
-
-    def run_application(self):
-        if not self.directory:
-            CTkMessagebox(
-                title="Error",
-                message="Please select a directory before starting.",
-                icon="cancel",
-            ).get()
-            return
-
-        if not os.path.isdir(self.directory):
-            CTkMessagebox(
-                title="Error",
-                message="The selected directory is not valid.",
-                icon="cancel",
-            ).get()
-            return
-
-        self.running = True
-        self.setup_running_ui()
 
         # Start compression in a separate thread
         Thread(target=self.compress_videos, args=(self.directory,)).start()

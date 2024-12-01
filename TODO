@@ -13,6 +13,6 @@ Todo:
   ✔ Stop FFMPEG popup @done(24-11-26 17:33)
   ✔ Update docs @done(24-11-26 17:37)
   ✔ Add "Show Output" button @done(24-12-01 10:07)
-  ☐ Add "Contact Developer" button
+  ✔ Add "Contact Developer" button @done(24-12-01 15:09)
+  ✔ Stress test @done(24-12-01 15:09)
   ☐ Update directory input
-  ☐ Stress test
