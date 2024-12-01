@@ -7,12 +7,13 @@ from utils.handler.handler import Handler
 from datetime import datetime
 import time
 
+
 # Create the main application class
 class CompressorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("GEP Media Compressor")
-        self.iconbitmap('./assets/ges.ico')
+        self.iconbitmap("./assets/ges.ico")
         self.geometry("500x200")
         self.running = False
 
@@ -26,6 +27,17 @@ class CompressorApp(ctk.CTk):
         # Initial UI setup
         self.setup_initial_ui()
 
+    def open_output_directory(self):
+        # Open the directory in the file explorer
+        if os.name == "nt":  # Windows
+            os.startfile(self.directory)
+        elif os.name == "posix":  # macOS/Linux
+            subprocess.Popen(
+                ["open", self.directory]
+                if "darwin" in os.sys.platform
+                else ["xdg-open", self.directory]
+            )
+
     def setup_initial_ui(self):
         # Forget all currently packed widgets
         self.clear_ui()
@@ -33,50 +45,65 @@ class CompressorApp(ctk.CTk):
         # Directory input field
         self.directory_string_var = StringVar()
         self.directory_string_var.trace_add("write", self.on_text_change)
-        
-        self.widgets['dir_input'] = ctk.CTkEntry(
-            self, width=400, placeholder_text="Select a directory", textvariable=self.directory_string_var
+
+        self.widgets["dir_input"] = ctk.CTkEntry(
+            self,
+            width=400,
+            placeholder_text="Select a directory",
+            textvariable=self.directory_string_var,
         )
-        self.widgets['dir_input'].pack(pady=20)
-        
+        self.widgets["dir_input"].pack(pady=20)
+
         # Frame to hold the buttons side by side
-        self.widgets['button_frame'] = ctk.CTkFrame(self)
-        self.widgets['button_frame'].pack(pady=10)
+        self.widgets["button_frame"] = ctk.CTkFrame(self)
+        self.widgets["button_frame"].pack(pady=10)
 
         # Buttons
-        self.widgets['select_button'] = ctk.CTkButton(
-            self.widgets['button_frame'], text="Select Directory", command=self.select_directory
+        self.widgets["select_button"] = ctk.CTkButton(
+            self.widgets["button_frame"],
+            text="Select Directory",
+            command=self.select_directory,
         )
-        self.widgets['select_button'].pack(side="left", padx=10)
+        self.widgets["select_button"].pack(side="left", padx=10)
 
-        self.widgets['start_button'] = ctk.CTkButton(
-            self.widgets['button_frame'], text="Start Application", command=self.start_application
+        self.widgets["start_button"] = ctk.CTkButton(
+            self.widgets["button_frame"],
+            text="Start Application",
+            command=self.start_application,
         )
-        self.widgets['start_button'].pack(side="left", padx=10)
-    
+        self.widgets["start_button"].pack(side="left", padx=10)
+
     def clear_ui(self):
         """Forget all widgets."""
         for widget in self.widgets.values():
             widget.pack_forget()
 
     def on_text_change(self, *args):
-        self.directory = self.widgets['dir_input'].get()
+        self.directory = self.widgets["dir_input"].get()
 
     def select_directory(self):
         # Open directory selection dialog
         directory = filedialog.askdirectory()
         if directory:
-            self.widgets['dir_input'].delete(0, ctk.END)
-            self.widgets['dir_input'].insert(0, directory)
+            self.widgets["dir_input"].delete(0, ctk.END)
+            self.widgets["dir_input"].insert(0, directory)
             self.directory = directory
 
     def start_application(self):
         if not self.directory:
-            CTkMessagebox(title="Error", message="Please select a directory before starting.", icon="cancel").get()
+            CTkMessagebox(
+                title="Error",
+                message="Please select a directory before starting.",
+                icon="cancel",
+            ).get()
             return
-        
+
         if not os.path.isdir(self.directory):
-            CTkMessagebox(title="Error", message="The selected directory is not valid. Please select a valid directory.", icon="cancel").get()
+            CTkMessagebox(
+                title="Error",
+                message="The selected directory is not valid. Please select a valid directory.",
+                icon="cancel",
+            ).get()
             return
 
         # Clear the initial UI
@@ -91,34 +118,50 @@ class CompressorApp(ctk.CTk):
         self.clear_ui()
 
         # Progress bar
-        self.widgets['progress_bar'] = ctk.CTkProgressBar(self, orientation="horizontal", width=400)
-        self.widgets['progress_bar'].pack(pady=10)
-        self.widgets['progress_bar'].set(0)
+        self.widgets["progress_bar"] = ctk.CTkProgressBar(
+            self, orientation="horizontal", width=400
+        )
+        self.widgets["progress_bar"].pack(pady=10)
+        self.widgets["progress_bar"].set(0)
 
         # Progress details
-        self.widgets['elapsed_time_label'] = ctk.CTkLabel(self, text="Elapsed Time: 00:00:00")
-        self.widgets['elapsed_time_label'].pack()
+        self.widgets["elapsed_time_label"] = ctk.CTkLabel(
+            self, text="Elapsed Time: 00:00:00"
+        )
+        self.widgets["elapsed_time_label"].pack()
 
-        self.widgets['eta_label'] = ctk.CTkLabel(self, text="ETA: --:--:--")
-        self.widgets['eta_label'].pack()
+        self.widgets["eta_label"] = ctk.CTkLabel(self, text="ETA: --:--:--")
+        self.widgets["eta_label"].pack()
 
-        self.widgets['current_file_label'] = ctk.CTkLabel(self, text="Current File: None")
-        self.widgets['current_file_label'].pack()
+        self.widgets["current_file_label"] = ctk.CTkLabel(
+            self, text="Current File: None"
+        )
+        self.widgets["current_file_label"].pack()
 
-        self.widgets['file_count_label'] = ctk.CTkLabel(self, text="Processed: 0/0")
-        self.widgets['file_count_label'].pack()
+        self.widgets["file_count_label"] = ctk.CTkLabel(self, text="Processed: 0/0")
+        self.widgets["file_count_label"].pack()
 
         # Stop button
-        self.widgets['stop_button'] = ctk.CTkButton(self, text="Stop Operation", command=self.stop_operation)
-        self.widgets['stop_button'].pack(pady=10)
+        self.widgets["stop_button"] = ctk.CTkButton(
+            self, text="Stop Operation", command=self.stop_operation
+        )
+        self.widgets["stop_button"].pack(pady=10)
 
     def run_application(self):
         if not self.directory:
-            CTkMessagebox(title="Error", message="Please select a directory before starting.", icon="cancel").get()
+            CTkMessagebox(
+                title="Error",
+                message="Please select a directory before starting.",
+                icon="cancel",
+            ).get()
             return
 
         if not os.path.isdir(self.directory):
-            CTkMessagebox(title="Error", message="The selected directory is not valid.", icon="cancel").get()
+            CTkMessagebox(
+                title="Error",
+                message="The selected directory is not valid.",
+                icon="cancel",
+            ).get()
             return
 
         self.running = True
@@ -139,7 +182,7 @@ class CompressorApp(ctk.CTk):
                     elapsed_time = datetime.now() - self.start_time
 
                     # Update elapsed time label
-                    self.widgets['elapsed_time_label'].configure(
+                    self.widgets["elapsed_time_label"].configure(
                         text=f"Elapsed Time: {str(elapsed_time).split('.')[0]}"
                     )
 
@@ -148,11 +191,11 @@ class CompressorApp(ctk.CTk):
                         self.eta_seconds_remaining -= 1
                         mins, secs = divmod(self.eta_seconds_remaining, 60)
                         hours, mins = divmod(mins, 60)
-                        self.widgets['eta_label'].configure(
+                        self.widgets["eta_label"].configure(
                             text=f"ETA: {hours:02}:{mins:02}:{secs:02}"
                         )
                     elif self.eta_seconds_remaining == 0:
-                        self.widgets['eta_label'].configure(text="ETA: 00:00:00")
+                        self.widgets["eta_label"].configure(text="ETA: 00:00:00")
 
                     time.sleep(1)
 
@@ -161,7 +204,7 @@ class CompressorApp(ctk.CTk):
 
             def update_progress(progress_ratio, current_file, file_index, total_files):
                 """Update the progress bar, labels, and estimate the ETA."""
-                self.widgets['progress_bar'].set(progress_ratio)
+                self.widgets["progress_bar"].set(progress_ratio)
 
                 # Estimate ETA and update countdown tracker
                 if progress_ratio > 0 and progress_ratio != 1:
@@ -173,10 +216,10 @@ class CompressorApp(ctk.CTk):
                     self.eta_seconds_remaining = 0
 
                 # Update current file and progress count
-                self.widgets['current_file_label'].configure(
+                self.widgets["current_file_label"].configure(
                     text=f"Current File: {os.path.basename(current_file)}"
                 )
-                self.widgets['file_count_label'].configure(
+                self.widgets["file_count_label"].configure(
                     text=f"Processed: {file_index}/{total_files}"
                 )
 
@@ -189,10 +232,8 @@ class CompressorApp(ctk.CTk):
             )
 
             # Notify the user upon successful completion
-            if self.running:  # Ensure the operation was not stopped
-                CTkMessagebox(
-                    title="Operation Completed", message="Operation Completed Successfully!", icon="check"
-                ).get()
+            if self.running:
+                self.show_operation_completed_message()
 
         except RuntimeError as e:
             # Notify the user of any errors encountered during compression
@@ -201,9 +242,19 @@ class CompressorApp(ctk.CTk):
             ).get()
 
         finally:
-            # Stop the updater thread and reset the UI to its initial state
             self.updater_running = False
             self.setup_initial_ui()
+
+    def show_operation_completed_message(self):
+        option = CTkMessagebox(
+            title="Operation Completed",
+            message="Operation Completed Successfully!",
+            icon="check",
+            option_1="OK",
+            option_2="Open Directory",
+        ).get()
+        if option == "Open Directory":
+            self.open_output_directory()
 
     def stop_operation(self):
         # Stop the running process
