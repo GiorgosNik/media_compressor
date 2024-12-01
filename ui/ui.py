@@ -17,6 +17,9 @@ class CompressorApp(ctk.CTk):
         self.geometry("500x200")
         self.running = False
 
+        # Define constants
+        self.SELECT_DIRECTORY_TEXT = "Select a directory"
+
         # Tracking time and progress
         self.start_time = None
         self.total_files = 0
@@ -87,9 +90,8 @@ class CompressorApp(ctk.CTk):
         )
         self.widgets["help_button"].place(x=460, y=18)
 
-
     def clear_placeholder(self, event):
-        if self.directory_string_var.get() == "Select a directory":
+        if self.directory_string_var.get() == self.SELECT_DIRECTORY_TEXT:
             self.directory_string_var.set("")
             self.widgets["dir_input"].configure(text_color="white")
 
