@@ -8,7 +8,6 @@ from datetime import datetime
 import time
 import webbrowser
 
-
 # Create the main application class
 class CompressorApp(ctk.CTk):
     def __init__(self):
@@ -40,26 +39,30 @@ class CompressorApp(ctk.CTk):
             )
 
     def setup_initial_ui(self):
-        # Forget all currently packed widgets
         self.clear_ui()
 
-        # Directory input field
         self.directory_string_var = StringVar()
-        self.directory_string_var.trace_add("write", self.on_text_change)
+        self.directory_string_var.set("Select a directory")
+        self.directory = ""
 
         self.widgets["dir_input"] = ctk.CTkEntry(
             self,
             width=400,
-            placeholder_text="Select a directory",
             textvariable=self.directory_string_var,
         )
         self.widgets["dir_input"].pack(pady=20)
 
-        # Frame to hold the buttons side by side
+        # Bind events for placeholder handling
+        self.widgets["dir_input"].bind("<FocusIn>", self.clear_placeholder)
+        self.widgets["dir_input"].bind("<FocusOut>", self.restore_placeholder)
+        self.widgets["dir_input"].configure(text_color="grey")
+
+        # Bind global click event to detect outside clicks
+        self.bind_all("<Button-1>", self.on_global_click)
+
         self.widgets["button_frame"] = ctk.CTkFrame(self)
         self.widgets["button_frame"].pack(pady=10)
 
-        # Buttons
         self.widgets["select_button"] = ctk.CTkButton(
             self.widgets["button_frame"],
             text="Select Directory",
@@ -73,17 +76,33 @@ class CompressorApp(ctk.CTk):
             command=self.start_application,
         )
         self.widgets["start_button"].pack(side="left", padx=10)
-        
-        # Help button
+
         self.widgets["help_button"] = ctk.CTkButton(
-                self,
-                text="?",
-                width=30,               # Width of the button
-                height=30,              # Height of the button
-                corner_radius=50,       # Half the width/height to create a circle
-                command=self.show_help_message,
-            )
-        self.widgets["help_button"].place(x=460, y=18)  # Position at top-right corner
+            self,
+            text="?",
+            width=30,
+            height=30,
+            corner_radius=50,
+            command=self.show_help_message,
+        )
+        self.widgets["help_button"].place(x=460, y=18)
+
+
+    def clear_placeholder(self, event):
+        if self.directory_string_var.get() == "Select a directory":
+            self.directory_string_var.set("")
+            self.widgets["dir_input"].configure(text_color="white")
+
+    def restore_placeholder(self, event):
+        if not self.directory_string_var.get().strip():
+            self.directory_string_var.set("Select a directory")
+            self.focus()
+            self.widgets["dir_input"].configure(text_color="grey")
+
+    def on_global_click(self, event):
+        widget = event.widget
+        if widget != self.widgets["dir_input"]:
+            self.restore_placeholder(None)
 
     def clear_ui(self):
         """Forget all widgets."""
@@ -100,7 +119,7 @@ class CompressorApp(ctk.CTk):
             self.widgets["dir_input"].delete(0, ctk.END)
             self.widgets["dir_input"].insert(0, directory)
             self.directory = directory
-            
+
     def show_help_message(self):
         option = CTkMessagebox(
             title="GEP Media Compressor Help",
@@ -115,17 +134,21 @@ class CompressorApp(ctk.CTk):
             option_3="View README",
         ).get()
         if option == "Contact Developer":
-            webbrowser.open("mailto:giorgosnl17@gmail.com?subject=GEP Compressor: Request for Support")
+            webbrowser.open(
+                "mailto:giorgosnl17@gmail.com?subject=GEP Compressor: Request for Support"
+            )
         elif option == "Get Updates":
             webbrowser.open("https://github.com/GiorgosNik/media_compressor/releases")
         elif option == "View README":
-            webbrowser.open("https://github.com/GiorgosNik/media_compressor/blob/main/README.md")
+            webbrowser.open(
+                "https://github.com/GiorgosNik/media_compressor/blob/main/README.md"
+            )
 
     def start_application(self):
         if not self.directory:
             CTkMessagebox(
                 title="Error",
-                message="Please select a directory before starting.",
+                message="Please provide a directory before starting.",
                 icon="cancel",
             ).get()
             return
@@ -141,7 +164,6 @@ class CompressorApp(ctk.CTk):
         # Clear the initial UI
         self.running = True
         self.setup_running_ui()
-
 
     def setup_running_ui(self):
         # Forget all widgets
