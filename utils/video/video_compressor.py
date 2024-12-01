@@ -1,4 +1,4 @@
-import platform
+import json
 import subprocess
 import ffmpeg
 import os
@@ -13,31 +13,54 @@ class VideoCompressor:
     LOGGER = None
 
     @classmethod
-    def is_video_proccessed(cls, file_path):
+    def is_video_processed(cls, file_path):
         try:
-            # Get the metadata using ffprobe
-            vid = ffmpeg.probe(file_path)["format"]["tags"]
-            if vid.get("comment") == "compressed":
-                return True
-            else:
-                return False
+            cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-show_format',
+                '-show_streams',
+                '-print_format', 'json',
+                file_path
+            ]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW  # Suppresses the window
+            )
+            metadata = json.loads(result.stdout)
+            vid_tags = metadata.get("format", {}).get("tags", {})
+            return vid_tags.get("comment") == "compressed"
         except Exception as e:
             cls.LOGGER.error(
-                f"Error while parsing metadata for video:{file_path}. ERROR MESSGAGE: {e.stderr.decode()}"
+                f"Error while parsing metadata for video:{file_path}. ERROR MESSAGE: {e}"
             )
             return False
 
     @classmethod
     def get_bitrate(cls, input_file):
         try:
-            """Get the original bitrate of a video and return 1/5th of it, rounded up to the nearest 100Kbps."""
-            probe = ffmpeg.probe(input_file)
-            original_bitrate = int(probe["format"]["bit_rate"])
+            cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-show_format',
+                '-print_format', 'json',
+                input_file
+            ]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            )
+            metadata = json.loads(result.stdout)
+            original_bitrate = int(metadata["format"]["bit_rate"])
             new_bitrate = ((original_bitrate // 5 + 99999) // 100000) * 100
             return f"{new_bitrate}K"
-        except ffmpeg.Error as e:
+        except Exception as e:
             cls.LOGGER.error(
-                f"Error while calculating bitrate for video:{input_file}. ERROR MESSGAGE: {e.stderr.decode()}"
+                f"Error while calculating bitrate for video:{input_file}. ERROR MESSAGE: {e}"
             )
             raise e
 
@@ -66,44 +89,52 @@ class VideoCompressor:
     @classmethod
     def compress_video_qsv(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
-            (
-                ffmpeg.input(input_file)
-                .output(
-                    output_file,
-                    video_bitrate=bitrate,
-                    vcodec="h264_qsv",
-                    r=framerate,
-                    metadata="comment=compressed",
-                    preset="medium",  # QSV-specific options
-                )
-                .global_args("-loglevel", "error")  # Suppress info, show only errors
-                .run()
+            cmd = [
+                'ffmpeg',
+                '-i', input_file,
+                '-b:v', bitrate,
+                '-vcodec', 'h264_qsv',
+                '-r', str(framerate),
+                '-metadata', 'comment=compressed',
+                '-preset', 'medium',  # QSV-specific options
+                '-loglevel', 'error',  # Suppress info, show only errors
+                output_file
+            ]
+            subprocess.run(
+                cmd,
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                check=True
             )
-            cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
-        except ffmpeg.Error as e:
+            cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
+        except subprocess.CalledProcessError as e:
             cls.LOGGER.error(
-                f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}"
+                f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {e.stderr.decode()}"
             )
 
     @classmethod
     def compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
-            (
-                ffmpeg.input(input_file)
-                .output(
-                    output_file,
-                    video_bitrate=bitrate,
-                    vcodec="libx264",  # Adjusted codec for CPU-based compression
-                    r=framerate,
-                    metadata="comment=compressed",
-                )
-                .global_args("-loglevel", "error")  # Suppress info, show only errors
-                .run()
+            cmd = [
+                'ffmpeg',
+                '-i', input_file,
+                '-b:v', bitrate,
+                '-vcodec', 'libx264',  # CPU-based compression codec
+                '-r', str(framerate),
+                '-metadata', 'comment=compressed',
+                '-loglevel', 'error',  # Suppress info, show only errors
+                output_file
+            ]
+            subprocess.run(
+                cmd,
+                capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                check=True
             )
-            cls.LOGGER.info(f"Compressed video:{input_file} to {output_file}")
-        except ffmpeg.Error as e:
+            cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
+        except subprocess.CalledProcessError as e:
             cls.LOGGER.error(
-                f"An error occurred while encoding:{input_file}. ERROR MESSAGE: {e.stderr.decode()}"
+                f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {e.stderr.decode()}"
             )
 
     @classmethod
@@ -122,7 +153,7 @@ class VideoCompressor:
         for root, _, files in os.walk(input_directory):
             for file in files:
                 if any(file.lower().endswith(ext) for ext in VIDEO_FILETYPES):
-                    if not cls.is_video_proccessed(os.path.join(root, file)):
+                    if not cls.is_video_processed(os.path.join(root, file)):
                         video_files.append(os.path.join(root, file))
                     else:
                         cls.LOGGER.info(

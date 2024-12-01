@@ -13,4 +13,5 @@ app.log
 main.spec
 build/
 dist/
-main.exe
+*GEP Media Compressor.exe
+*.spec

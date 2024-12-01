@@ -8,7 +8,7 @@ Compression=lzma
 SolidCompression=yes
 
 [Files]
-Source: "../../dist/main.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "../../dist/GEP Media Compressor.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "../../assets/ges.ico"; DestDir: "{app}/assets"; Flags: ignoreversion
 Source: "../../ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "../../ffprobe.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -18,4 +18,4 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 
 [Icons]
 Name: "{group}\GEP Media Compressor"; Filename: "{app}\GEP Media Compressor.exe"
-Name: "{autodesktop}\GEP Media Compressor"; Filename: "{app}\main.exe"; IconFilename: "{app}/assets/ges.ico"; Tasks: desktopicon
+Name: "{autodesktop}\GEP Media Compressor"; Filename: "{app}\GEP Media Compressor.exe"; IconFilename: "{app}/assets/ges.ico"; Tasks: desktopicon

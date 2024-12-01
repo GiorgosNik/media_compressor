@@ -35,7 +35,7 @@ def test_is_video_processed(mock_ffmpeg, mock_logger):
     mock_probe.return_value = {'format': {'tags': {'comment': 'compressed'}}}
 
     # Act
-    result = VideoCompressor.is_video_proccessed(file_path)
+    result = VideoCompressor.is_video_processed(file_path)
 
     # Assert
     assert result is True
@@ -49,7 +49,7 @@ def test_is_video_processed_error(mock_ffmpeg, mock_logger):
     mock_probe.side_effect = mock_error
 
     # Act
-    result = VideoCompressor.is_video_proccessed(file_path)
+    result = VideoCompressor.is_video_processed(file_path)
 
     # Assert
     assert result is False
@@ -189,7 +189,7 @@ def test_get_video_files(mock_os_walk, mock_logger):
     # Arrange
     input_directory = "path/to/videos"
     mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.avi"])]
-    VideoCompressor.is_video_proccessed = mock.MagicMock(return_value=False)
+    VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
 
     # Act
     result = VideoCompressor.get_video_files(input_directory)
@@ -202,7 +202,7 @@ def test_get_video_files_processed(mock_os_walk, mock_logger):
     # Arrange
     input_directory = "path/to/videos"
     mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.avi"])]
-    VideoCompressor.is_video_proccessed = mock.MagicMock(return_value=True)
+    VideoCompressor.is_video_processed = mock.MagicMock(return_value=True)
 
     # Act
     result = VideoCompressor.get_video_files(input_directory)
@@ -215,7 +215,7 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
     input_directory = "path/to/input"
     output_directory = "path/to/output"
     mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.mp4"])]
-    VideoCompressor.is_video_proccessed = mock.MagicMock(return_value=False)
+    VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
     VideoCompressor.get_bitrate = mock.MagicMock(return_value="1000K")
     VideoCompressor.is_codec_available = mock.MagicMock(return_value=True)
     VideoCompressor.compress_video = mock.MagicMock()
