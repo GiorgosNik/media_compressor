@@ -1,4 +1,6 @@
+import json
 import logging
+import subprocess
 import pytest
 from unittest import mock
 from utils.video.config import VIDEO_CODECS
@@ -21,74 +23,103 @@ def mock_ffmpeg():
     with mock.patch('ffmpeg.probe') as mock_probe, \
          mock.patch('ffmpeg.input') as mock_input:
         yield mock_probe, mock_input
-
+        
 
 @pytest.fixture
 def mock_os_walk():
     with mock.patch('os.walk') as mock_walk:
         yield mock_walk
-
-def test_is_video_processed(mock_ffmpeg, mock_logger):
+             
+def test_is_video_processed(mock_logger):
     # Arrange
-    mock_probe, _ = mock_ffmpeg
     file_path = "path/to/video.mp4"
-    mock_probe.return_value = {'format': {'tags': {'comment': 'compressed'}}}
+    mock_result = mock.Mock()
+    mock_result.stdout = json.dumps({
+        "format": {
+            "tags": {
+                "comment": "compressed"
+            }
+        }
+    })
+    mock_result.returncode = 0
 
-    # Act
-    result = VideoCompressor.is_video_processed(file_path)
+    with mock.patch('subprocess.run', return_value=mock_result):
+        # Act
+        result = VideoCompressor.is_video_processed(file_path)
 
-    # Assert
-    assert result is True
-    mock_logger.error.assert_not_called()
+        # Assert
+        assert result is True
+        mock_logger.error.assert_not_called()
 
-def test_is_video_processed_error(mock_ffmpeg, mock_logger):
-    # Arrange
-    mock_probe, _ = mock_ffmpeg
+def test_is_video_processed_uncompressed(mock_logger):
+    # Arrange  
     file_path = "path/to/video.mp4"
-    mock_error = ffmpeg.Error("Error parsing metadata", b"", b"Error parsing metadata")
-    mock_probe.side_effect = mock_error
+    mock_result = mock.Mock()
+    mock_result.stdout = json.dumps({
+        "format": {
+            "tags": {
+                "comment": "not_compressed"
+            }
+        }
+    })
+    mock_result.returncode = 0
 
-    # Act
-    result = VideoCompressor.is_video_processed(file_path)
+    with mock.patch('subprocess.run', return_value=mock_result):
+        # Act
+        result = VideoCompressor.is_video_processed(file_path)
 
-    # Assert
-    assert result is False
-    mock_logger.error.assert_called_once_with(
-        f"Error while parsing metadata for video:{file_path}. ERROR MESSGAGE: {mock_error.stderr.decode()}"
-    )
+        # Assert
+        assert result is False
+        mock_logger.error.assert_not_called()
 
-def test_get_bitrate(mock_ffmpeg, mock_logger):
+def test_is_video_processed_error(mock_logger):
     # Arrange
-    mock_probe, _ = mock_ffmpeg
-    input_file = "path/to/video.mp4"
-    mock_probe.return_value = {'format': {'bit_rate': '5000000'}}
+    file_path = "path/to/video.mp4"
+    mock_error = Exception("ffprobe error")
+    
+    with mock.patch('subprocess.run', side_effect=mock_error):
+        # Act
+        result = VideoCompressor.is_video_processed(file_path)
 
-    # Act
-    bitrate = VideoCompressor.get_bitrate(input_file)
+        # Assert 
+        assert result is False
+        mock_logger.error.assert_called_once_with(
+            f"Error while parsing metadata for video:{file_path}. ERROR MESSAGE: ffprobe error"
+        )
 
-    # Assert
-    assert bitrate == "1000K"
-    mock_logger.error.assert_not_called()
-
-def test_get_bitrate_error(mock_ffmpeg, mock_logger):
+def test_get_bitrate(mock_logger):
     # Arrange
-    mock_probe, _ = mock_ffmpeg
     input_file = "path/to/video.mp4"
-    mock_error = ffmpeg.Error(
-        "Error calculating bitrate",
-        b"",
-        b"Error calculating bitrate"
-    )
-    mock_probe.side_effect = mock_error
+    mock_result = mock.Mock()
+    mock_result.stdout = json.dumps({
+        "format": {
+            "bit_rate": "5000000"  # 5Mbps
+        }
+    })
+    mock_result.returncode = 0
 
-    # Act
-    with pytest.raises(ffmpeg.Error):
-        VideoCompressor.get_bitrate(input_file)
+    with mock.patch('subprocess.run', return_value=mock_result):
+        # Act
+        result = VideoCompressor.get_bitrate(input_file)
 
-    # Assert
-    mock_logger.error.assert_called_once_with(
-        "Error while calculating bitrate for video:path/to/video.mp4. ERROR MESSGAGE: Error calculating bitrate"
-    )
+        # Assert
+        assert result == "1000K"  # Expected bitrate after compression (5Mbps/5)
+        mock_logger.error.assert_not_called()
+
+def test_get_bitrate_error(mock_logger):
+    # Arrange
+    input_file = "path/to/video.mp4"
+    mock_error = Exception("ffprobe error")
+    
+    with mock.patch('subprocess.run', side_effect=mock_error):
+        # Act & Assert
+        with pytest.raises(Exception) as exc_info:
+            VideoCompressor.get_bitrate(input_file)
+        
+        assert str(exc_info.value) == "ffprobe error"
+        mock_logger.error.assert_called_once_with(
+            f"Error while calculating bitrate for video:{input_file}. ERROR MESSAGE: ffprobe error"
+        )
 
 
 def test_is_codec_available(mock_ffmpeg, mock_logger):
@@ -144,47 +175,55 @@ def test_select_best_codec_no_available(mock_ffmpeg, mock_logger):
     # Assert
     mock_logger.error.assert_not_called()
 
-def test_compress_video_qsv(mock_ffmpeg, mock_logger):
+@patch('subprocess.run')
+def test_compress_video_qsv(mock_subprocess_run, mock_logger):
     # Arrange
-    input_file = "path/to/input.mp4"
+    input_file = "path/to/input.mp4" 
     output_file = "path/to/output.mp4"
     bitrate = "1000K"
     framerate = 30
-    _, mock_input = mock_ffmpeg
-    mock_run = MagicMock(return_value=None)
-    mock_input.return_value.output.return_value.global_args.return_value.run = mock_run
-
-    # Act
-    VideoCompressor.compress_video_qsv(input_file, output_file, bitrate, framerate)
-    
-    # Assert
-    mock_run.assert_called_once()
-    mock_logger.info.assert_called_once_with(f"Compressed video:{input_file} to {output_file}")
-
-
-def test_compress_video_qsv_error(mock_ffmpeg, mock_logger):
-    # Arrange
-    input_file = "path/to/input.mp4"
-    output_file = "path/to/output.mp4"
-    bitrate = "1000K"
-    framerate = 30
-    _, mock_input = mock_ffmpeg
-    mock_error = ffmpeg.Error(
-        "Compression failed",
-        b"mock stdout",
-        b"Compression failed"
-    )
-    mock_input.return_value.output.return_value.global_args.return_value.run.side_effect = mock_error
+    mock_subprocess_run.return_value = mock.Mock(returncode=0)
 
     # Act
     VideoCompressor.compress_video_qsv(input_file, output_file, bitrate, framerate)
 
     # Assert
-    mock_logger.error.assert_called_once_with(
-        f"An error occurred while encoding:{input_file}. ERROR MESSGAGE: Compression failed"
+    mock_subprocess_run.assert_called_once()
+    assert mock_subprocess_run.call_args[0][0] == [
+        'ffmpeg',
+        '-i', input_file,
+        '-b:v', bitrate,
+        '-vcodec', 'h264_qsv', 
+        '-r', str(framerate),
+        '-metadata', 'comment=compressed',
+        '-preset', 'medium',
+        '-loglevel', 'error',
+        output_file
+    ]
+    mock_logger.info.assert_called_once_with(
+        f"Compressed video: {input_file} to {output_file}"
     )
 
+def test_compress_video_qsv_subprocess_error(mock_logger):
+    # Arrange
+    input_file = "path/to/input.mp4"
+    output_file = "path/to/output.mp4" 
+    bitrate = "1000K"
+    framerate = 30
+    error_message = "Subprocess error"
+    mock_error = subprocess.CalledProcessError(
+        1, "cmd", stderr=error_message.encode()
+    )
 
+    with mock.patch("subprocess.run", side_effect=mock_error):
+        # Act
+        VideoCompressor.compress_video_qsv(input_file, output_file, bitrate, framerate)
+
+        # Assert
+        mock_logger.error.assert_called_once_with(
+            f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {error_message}"
+        )
+        
 def test_get_video_files(mock_os_walk, mock_logger):
     # Arrange
     input_directory = "path/to/videos"
@@ -225,26 +264,3 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
 
     # Assert
     VideoCompressor.compress_video.assert_called()
-
-
-def test_compress_video_qsv_error(mock_ffmpeg, mock_logger):
-    # Arrange
-    input_file = "path/to/input.mp4"
-    output_file = "path/to/output.mp4"
-    bitrate = "1000K"
-    framerate = 30
-    _, mock_input = mock_ffmpeg
-    mock_error = ffmpeg.Error(
-        "Compression failed",
-        b"mock stdout",
-        b"Compression failed"
-    )
-    mock_input.return_value.output.return_value.global_args.return_value.run.side_effect = mock_error
-
-    # Act
-    VideoCompressor.compress_video_qsv(input_file, output_file, bitrate, framerate)
-
-    # Assert
-    mock_logger.error.assert_called_once_with(
-        f"An error occurred while encoding:{input_file}. ERROR MESSAGE: Compression failed"
-    )
