@@ -7,9 +7,8 @@ from utils.video.config import VIDEO_CODECS
 import os
 import ffmpeg
 from utils.video.video_compressor import VideoCompressor
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import os
-from pathlib import Path
 
 # Test setup
 @pytest.fixture
@@ -151,7 +150,7 @@ def test_is_codec_available_error(mock_ffmpeg, mock_logger):
     # Assert
     assert result is False
     mock_logger.error.assert_called_once_with(
-        "Error while detecting CODEC:h264_qsv. ERROR MESSGAGE: Codec unavailable"
+        "Error while detecting CODEC:h264_qsv. ERROR MESSAGE: Codec unavailable"
     )
 
 def test_select_best_codec(mock_ffmpeg, mock_logger):

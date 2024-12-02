@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 import ffmpeg
 import os
 from utils.video.config import VIDEO_FILETYPES
@@ -13,6 +14,12 @@ class VideoCompressor:
     LOGGER = None
 
     @classmethod
+    def run_subprocess_with_flags(cls, cmd, **kwargs):
+        if sys.platform == 'win32':
+            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+        return subprocess.run(cmd, **kwargs)
+
+    @classmethod
     def is_video_processed(cls, file_path):
         try:
             cmd = [
@@ -23,11 +30,10 @@ class VideoCompressor:
                 '-print_format', 'json',
                 file_path
             ]
-            result = subprocess.run(
+            result = cls.run_subprocess_with_flags(
                 cmd,
                 capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW  # Suppresses the window
+                text=True
             )
             metadata = json.loads(result.stdout)
             vid_tags = metadata.get("format", {}).get("tags", {})
@@ -48,11 +54,10 @@ class VideoCompressor:
                 '-print_format', 'json',
                 input_file
             ]
-            result = subprocess.run(
+            result = cls.run_subprocess_with_flags(
                 cmd,
                 capture_output=True,
-                text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW
+                text=True
             )
             metadata = json.loads(result.stdout)
             original_bitrate = int(metadata["format"]["bit_rate"])
@@ -74,7 +79,7 @@ class VideoCompressor:
             return True
         except ffmpeg.Error as e:
             cls.LOGGER.error(
-                f"Error while detecting CODEC:{codec}. ERROR MESSGAGE: {e.stderr.decode()}"
+                f"Error while detecting CODEC:{codec}. ERROR MESSAGE: {e.stderr.decode()}"
             )
             return False
 
@@ -198,7 +203,7 @@ class VideoCompressor:
                 )
             except Exception as e:
                 cls.LOGGER.error(
-                    f"Uncaught error occurred while compressing:{input_file}. ERROR MESSGAGE: {str(e)}"
+                    f"Uncaught error occurred while compressing:{input_file}. ERROR MESSAGE: {str(e)}"
                 )
 
         if progress_callback:
