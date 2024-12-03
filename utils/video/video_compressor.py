@@ -16,6 +16,7 @@ class VideoCompressor:
     @classmethod
     def run_subprocess_with_flags(cls, cmd, **kwargs):
         if sys.platform == 'win32':
+            kwargs['encoding'] = 'utf-8'
             kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
         return subprocess.run(cmd, **kwargs)
 
@@ -108,7 +109,6 @@ class VideoCompressor:
             cls.run_subprocess_with_flags(
                 cmd,
                 capture_output=True,
-                creationflags=subprocess.CREATE_NO_WINDOW,
                 check=True
             )
             cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
