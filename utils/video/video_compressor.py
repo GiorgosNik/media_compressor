@@ -101,11 +101,11 @@ class VideoCompressor:
                 '-vcodec', 'h264_qsv',
                 '-r', str(framerate),
                 '-metadata', 'comment=compressed',
-                '-preset', 'medium',  # QSV-specific options
-                '-loglevel', 'error',  # Suppress info, show only errors
+                '-preset', 'medium',
+                '-loglevel', 'error',
                 output_file
             ]
-            subprocess.run(
+            cls.run_subprocess_with_flags(
                 cmd,
                 capture_output=True,
                 creationflags=subprocess.CREATE_NO_WINDOW,
@@ -130,10 +130,9 @@ class VideoCompressor:
                 '-loglevel', 'error',  # Suppress info, show only errors
                 output_file
             ]
-            subprocess.run(
+            cls.run_subprocess_with_flags(
                 cmd,
                 capture_output=True,
-                creationflags=subprocess.CREATE_NO_WINDOW,
                 check=True
             )
             cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
