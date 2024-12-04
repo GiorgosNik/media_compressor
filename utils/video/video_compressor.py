@@ -180,13 +180,18 @@ class VideoCompressor:
         # Gather video files
         video_files = cls.get_video_files(input_directory)
 
+        # Calculate total size of all files
+        total_size = sum(os.path.getsize(f) for f in video_files)
+        processed_size = 0
+
         # Process each video file
         total_files = len(video_files)
         for idx, input_file in enumerate(video_files, start=0):
             try:
                 # Update progress
                 if progress_callback:
-                    progress_callback(idx / total_files, input_file, idx, total_files)
+                    progress = processed_size / total_size if total_size > 0 else 0
+                    progress_callback(progress, input_file, idx, total_files)
 
                 # Calculate output file path
                 relative_path = os.path.relpath(input_file, input_directory)
@@ -200,6 +205,10 @@ class VideoCompressor:
                 cls.compress_video(
                     input_file, output_file, bitrate, video_codec, framerate
                 )
+
+                # Update processed size
+                processed_size += os.path.getsize(input_file)
+
             except Exception as e:
                 cls.LOGGER.error(
                     f"Uncaught error occurred while compressing:{input_file}. ERROR MESSAGE: {str(e)}"

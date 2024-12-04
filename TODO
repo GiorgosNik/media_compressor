@@ -20,4 +20,4 @@ Todo:
   ✔ Add UI testing @done(24-12-04 17:46)
   ☐ Add Images/Video radio buttons
   ☐ Add option to convert H264 to mp4 before conversion
-  ☐ Fix ETA calculation
+  ✔ Fix ETA calculation @done(24-12-04 19:24)

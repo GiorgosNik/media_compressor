@@ -253,13 +253,19 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
     input_directory = "path/to/input"
     output_directory = "path/to/output"
     mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.mp4"])]
+    
     VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
     VideoCompressor.get_bitrate = mock.MagicMock(return_value="1000K")
     VideoCompressor.is_codec_available = mock.MagicMock(return_value=True)
     VideoCompressor.compress_video = mock.MagicMock()
-
-    # Act
-    VideoCompressor.compress_videos_in_directory(input_directory, output_directory)
+    
+    with mock.patch('os.path.getsize', return_value=1000000):
+        # Act
+        VideoCompressor.compress_videos_in_directory(
+            input_directory, 
+            output_directory,
+            progress_callback=None
+        )
 
     # Assert
     VideoCompressor.compress_video.assert_called()
