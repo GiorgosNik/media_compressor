@@ -17,4 +17,7 @@ Todo:
   ✔ Stress test @done(24-12-01 15:09)
   ✔ Remove terminal popup @done(24-12-01 15:49)
   ✔ Update directory input @done(24-12-01 17:00)
+  ✔ Add UI testing @done(24-12-04 17:46)
   ☐ Add Images/Video radio buttons
+  ☐ Add option to convert H264 to mp4 before conversion
+  ☐ Fix ETA calculation

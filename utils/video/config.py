@@ -14,7 +14,6 @@ VIDEO_FILETYPES = [
     ".vob",
     ".asf",
     ".rm",
-    ".h264",
 ]
 
 VIDEO_CODECS = ["h264_qsv", "libx264"]

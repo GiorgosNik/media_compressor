@@ -45,7 +45,7 @@ class CompressorApp(ctk.CTk):
         self.clear_ui()
 
         self.directory_string_var = StringVar()
-        self.directory_string_var.set("Select a directory")
+        self.directory_string_var.set(self.SELECT_DIRECTORY_TEXT)
         self.directory = ""
 
         self.widgets["dir_input"] = ctk.CTkEntry(
@@ -97,7 +97,7 @@ class CompressorApp(ctk.CTk):
 
     def restore_placeholder(self, event):
         if not self.directory_string_var.get().strip():
-            self.directory_string_var.set("Select a directory")
+            self.directory_string_var.set(self.SELECT_DIRECTORY_TEXT)
             self.focus()
             self.widgets["dir_input"].configure(text_color="grey")
 
