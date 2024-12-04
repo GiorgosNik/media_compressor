@@ -38,6 +38,9 @@ jobs:
         sudo add-apt-repository ppa:jonathonf/ffmpeg-4
         sudo apt install ffmpeg
 
+    - name: Install Xvfb
+      run: sudo apt-get install xvfb
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -48,9 +51,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Running pytest
+    - name: Running pytest with Xvfb
       run: |
-        pytest -v  --cov --cov-report=xml --cov-report=html --junitxml="xunit-result.xml"
+        xvfb-run pytest -v --cov --cov-report=xml --cov-report=html --junitxml="xunit-result.xml"
 
     - uses: actions/upload-artifact@v3
       with:
