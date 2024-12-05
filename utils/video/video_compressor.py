@@ -118,6 +118,31 @@ class VideoCompressor:
             )
 
     @classmethod
+    def compress_video_h264(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
+        try:
+            cmd = [
+                'ffmpeg',
+                '-i', input_file,
+                '-b:v', bitrate,
+                '-c:v', 'copy',  # Copy video stream without re-encoding
+                '-movflags', '+faststart',  # Optimize for web playback
+                '-f', 'mp4',  # Force MP4 container
+                '-metadata', 'comment=compressed',
+                '-loglevel', 'error',
+                output_file
+            ]
+            cls.run_subprocess_with_flags(
+                cmd,
+                capture_output=True,
+                check=True
+            )
+            cls.LOGGER.info(f"Converted video: {input_file} to {output_file}")
+        except subprocess.CalledProcessError as e:
+            cls.LOGGER.error(
+                f"An error occurred while converting: {input_file}. ERROR MESSAGE: {e.stderr.decode()}"
+            )
+
+    @classmethod
     def compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
             cmd = [

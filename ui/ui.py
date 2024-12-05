@@ -8,6 +8,7 @@ from datetime import datetime
 import time
 import webbrowser
 
+
 # Create the main application class
 class CompressorApp(ctk.CTk):
     def __init__(self):
@@ -63,7 +64,7 @@ class CompressorApp(ctk.CTk):
         # Bind global click event to detect outside clicks
         self.bind_all("<Button-1>", self.on_global_click)
 
-        self.widgets["button_frame"] = ctk.CTkFrame(self)
+        self.widgets["button_frame"] = ctk.CTkFrame(self, fg_color="transparent")
         self.widgets["button_frame"].pack(pady=10)
 
         self.widgets["select_button"] = ctk.CTkButton(
@@ -89,6 +90,43 @@ class CompressorApp(ctk.CTk):
             command=self.show_help_message,
         )
         self.widgets["help_button"].place(x=460, y=18)
+
+        self.process_video = True
+        self.process_image = True
+        self.convert_h264 = True
+
+        self.widgets["checkbox_frame"] = ctk.CTkFrame(self, fg_color="transparent")
+        self.widgets["checkbox_frame"].pack(pady=20)
+
+        self.widgets["video_checkbox"] = ctk.CTkCheckBox(
+            self.widgets["checkbox_frame"],
+            text="Process Video",
+            command=lambda: setattr(
+                self, "process_video", self.widgets["video_checkbox"].get()
+            ),
+        )
+        self.widgets["video_checkbox"].pack(side="left", padx=20)
+        self.widgets["video_checkbox"].select()
+
+        self.widgets["image_checkbox"] = ctk.CTkCheckBox(
+            self.widgets["checkbox_frame"],
+            text="Process Image",
+            command=lambda: setattr(
+                self, "process_image", self.widgets["image_checkbox"].get()
+            ),
+        )
+        self.widgets["image_checkbox"].pack(side="left", padx=20)
+        self.widgets["image_checkbox"].select()
+
+        self.widgets["convert_h264_checkbox"] = ctk.CTkCheckBox(
+            self.widgets["checkbox_frame"],
+            text="Convert H264 to MP4",
+            command=lambda: setattr(
+                self, "convert_h264", self.widgets["convert_h264_checkbox"].get()
+            ),
+        )
+        self.widgets["convert_h264_checkbox"].pack(side="left", padx=20)
+        self.widgets["convert_h264_checkbox"].select()
 
     def clear_placeholder(self, event):
         if self.directory_string_var.get() == self.SELECT_DIRECTORY_TEXT:
@@ -202,9 +240,9 @@ class CompressorApp(ctk.CTk):
         self.widgets["stop_button"].pack(pady=10)
 
         # Start compression in a separate thread
-        Thread(target=self.compress_videos, args=(self.directory,)).start()
+        Thread(target=self.compress_media, args=(self.directory,)).start()
 
-    def compress_videos(self, input_directory):
+    def compress_media(self, input_directory):
         try:
             self.start_time = datetime.now()  # Record the start time
             self.eta_seconds_remaining = None  # Initialize ETA countdown
@@ -260,6 +298,9 @@ class CompressorApp(ctk.CTk):
             # Call the compression handler with the callback
             Handler.start_compression(
                 input_directory=input_directory,
+                process_video=self.process_video,
+                process_image=self.process_image,
+                convert_h264=self.convert_h264,
                 progress_callback=lambda progress_ratio, current_file, file_index, total_files: update_progress(
                     progress_ratio, current_file, file_index, total_files
                 ),
