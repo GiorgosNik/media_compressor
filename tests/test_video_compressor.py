@@ -360,3 +360,65 @@ def test_convert_incompatible_video_error(mock_logger):
         mock_logger.error.assert_called_once_with(
             f"An error occurred while converting: {input_file}. ERROR MESSAGE: {error_message}"
         )
+def test_convert_incompatible_videos_in_directory_and_compress(mock_os_walk, mock_logger):
+    # Arrange
+    input_directory = "path/to/input"
+    output_directory = "path/to/output"
+    mock_os_walk.return_value = [(input_directory, [], ["video1.h264", "video2.h264"])]
+    
+    VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
+    VideoCompressor.convert_incompatible_video = mock.MagicMock()
+    
+    with mock.patch('os.path.getsize', return_value=1000000):
+        # Act
+        VideoCompressor.convert_incompatible_videos_in_directory_and_compress(
+            input_directory, 
+            output_directory,
+            progress_callback=None
+        )
+
+    # Assert
+    VideoCompressor.convert_incompatible_video.assert_called()
+
+@patch('subprocess.run')
+def test_convert_incompatible_video(mock_subprocess_run, mock_logger):
+    # Arrange
+    input_file = "path/to/input.mkv"
+    output_file = "path/to/output.mp4"
+    mock_subprocess_run.return_value = mock.Mock(returncode=0)
+
+    # Act
+    VideoCompressor.convert_incompatible_video(input_file, output_file)
+
+    # Assert
+    mock_subprocess_run.assert_called_once()
+    assert mock_subprocess_run.call_args[0][0] == [
+        'ffmpeg',
+        '-i', input_file,
+        '-c:v', 'libx264',
+        '-crf', '23',
+        '-metadata', 'comment=compressed',
+        '-preset', 'medium', 
+        output_file
+    ]
+    mock_logger.info.assert_called_once_with(
+        f"Converted video: {input_file} to {output_file}"
+    )
+
+def test_convert_incompatible_video_error(mock_logger):
+    # Arrange 
+    input_file = "path/to/input.mkv"
+    output_file = "path/to/output.mp4"
+    error_message = "Subprocess error"
+    mock_error = subprocess.CalledProcessError(
+        1, "cmd", stderr=error_message.encode()
+    )
+
+    with mock.patch("subprocess.run", side_effect=mock_error):
+        # Act
+        VideoCompressor.convert_incompatible_video(input_file, output_file)
+
+        # Assert
+        mock_logger.error.assert_called_once_with(
+            f"An error occurred while converting: {input_file}. ERROR MESSAGE: {error_message}"
+        ) 
