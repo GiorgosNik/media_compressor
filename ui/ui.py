@@ -93,7 +93,7 @@ class CompressorApp(ctk.CTk):
 
         self.process_video = True
         self.process_image = True
-        self.convert_h264 = True
+        self.convert_incompatible = True
 
         self.widgets["checkbox_frame"] = ctk.CTkFrame(self, fg_color="transparent")
         self.widgets["checkbox_frame"].pack(pady=20)
@@ -118,15 +118,15 @@ class CompressorApp(ctk.CTk):
         self.widgets["image_checkbox"].pack(side="left", padx=20)
         self.widgets["image_checkbox"].select()
 
-        self.widgets["convert_h264_checkbox"] = ctk.CTkCheckBox(
+        self.widgets["convert_incompatible_checkbox"] = ctk.CTkCheckBox(
             self.widgets["checkbox_frame"],
-            text="Convert H264 to MP4",
+            text="Convert Incompatible \n formats to MP4",
             command=lambda: setattr(
-                self, "convert_h264", self.widgets["convert_h264_checkbox"].get()
+                self, "convert_incompatible", self.widgets["convert_incompatible_checkbox"].get()
             ),
         )
-        self.widgets["convert_h264_checkbox"].pack(side="left", padx=20)
-        self.widgets["convert_h264_checkbox"].select()
+        self.widgets["convert_incompatible_checkbox"].pack(side="left", padx=20)
+        self.widgets["convert_incompatible_checkbox"].select()
 
     def clear_placeholder(self, event):
         if self.directory_string_var.get() == self.SELECT_DIRECTORY_TEXT:
@@ -300,7 +300,7 @@ class CompressorApp(ctk.CTk):
                 input_directory=input_directory,
                 process_video=self.process_video,
                 process_image=self.process_image,
-                convert_h264=self.convert_h264,
+                convert_incompatible=self.convert_incompatible,
                 progress_callback=lambda progress_ratio, current_file, file_index, total_files: update_progress(
                     progress_ratio, current_file, file_index, total_files
                 ),

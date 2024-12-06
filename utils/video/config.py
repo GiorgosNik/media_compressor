@@ -14,6 +14,11 @@ VIDEO_FILETYPES = [
     ".vob",
     ".asf",
     ".rm",
+    ".mts",
+]
+
+INCOMPATIBLE_FILETYPES = [
+    ".h264",
 ]
 
 VIDEO_CODECS = ["h264_qsv", "libx264"]

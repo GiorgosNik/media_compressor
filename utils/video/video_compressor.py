@@ -3,7 +3,7 @@ import subprocess
 import sys
 import ffmpeg
 import os
-from utils.video.config import VIDEO_FILETYPES
+from utils.video.config import INCOMPATIBLE_FILETYPES, VIDEO_FILETYPES
 from utils.video.config import VIDEO_CODECS
 from utils.logging.logging import setup_logging
 import logging
@@ -12,33 +12,32 @@ import logging
 class VideoCompressor:
     FRAMERATE = 29.97
     LOGGER = None
+    COMPRESSED_MESSAGE = "compressed"
 
     @classmethod
     def run_subprocess_with_flags(cls, cmd, **kwargs):
-        if sys.platform == 'win32':
-            kwargs['encoding'] = 'utf-8'
-            kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+        if sys.platform == "win32":
+            kwargs["encoding"] = "utf-8"
+            kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
         return subprocess.run(cmd, **kwargs)
 
     @classmethod
     def is_video_processed(cls, file_path):
         try:
             cmd = [
-                'ffprobe',
-                '-v', 'error',
-                '-show_format',
-                '-show_streams',
-                '-print_format', 'json',
-                file_path
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_format",
+                "-show_streams",
+                "-print_format",
+                "json",
+                file_path,
             ]
-            result = cls.run_subprocess_with_flags(
-                cmd,
-                capture_output=True,
-                text=True
-            )
+            result = cls.run_subprocess_with_flags(cmd, capture_output=True, text=True)
             metadata = json.loads(result.stdout)
             vid_tags = metadata.get("format", {}).get("tags", {})
-            return vid_tags.get("comment") == "compressed"
+            return vid_tags.get("comment") == cls.COMPRESSED_MESSAGE
         except Exception as e:
             cls.LOGGER.error(
                 f"Error while parsing metadata for video:{file_path}. ERROR MESSAGE: {e}"
@@ -49,17 +48,15 @@ class VideoCompressor:
     def get_bitrate(cls, input_file):
         try:
             cmd = [
-                'ffprobe',
-                '-v', 'error',
-                '-show_format',
-                '-print_format', 'json',
-                input_file
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_format",
+                "-print_format",
+                "json",
+                input_file,
             ]
-            result = cls.run_subprocess_with_flags(
-                cmd,
-                capture_output=True,
-                text=True
-            )
+            result = cls.run_subprocess_with_flags(cmd, capture_output=True, text=True)
             metadata = json.loads(result.stdout)
             original_bitrate = int(metadata["format"]["bit_rate"])
             new_bitrate = ((original_bitrate // 5 + 99999) // 100000) * 100
@@ -96,21 +93,24 @@ class VideoCompressor:
     def compress_video_qsv(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
             cmd = [
-                'ffmpeg',
-                '-i', input_file,
-                '-b:v', bitrate,
-                '-vcodec', 'h264_qsv',
-                '-r', str(framerate),
-                '-metadata', 'comment=compressed',
-                '-preset', 'medium',
-                '-loglevel', 'error',
-                output_file
+                "ffmpeg",
+                "-i",
+                input_file,
+                "-b:v",
+                bitrate,
+                "-vcodec",
+                "h264_qsv",
+                "-r",
+                str(framerate),
+                "-metadata",
+                "comment="+cls.COMPRESSED_MESSAGE,
+                "-preset",
+                "medium",
+                "-loglevel",
+                "error",
+                output_file,
             ]
-            cls.run_subprocess_with_flags(
-                cmd,
-                capture_output=True,
-                check=True
-            )
+            cls.run_subprocess_with_flags(cmd, capture_output=True, check=True)
             cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
         except subprocess.CalledProcessError as e:
             cls.LOGGER.error(
@@ -118,26 +118,26 @@ class VideoCompressor:
             )
 
     @classmethod
-    def compress_video_h264(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
+    def convert_incompatible_video(cls, input_file, output_file):
         try:
             cmd = [
-                'ffmpeg',
-                '-i', input_file,
-                '-b:v', bitrate,
-                '-c:v', 'copy',  # Copy video stream without re-encoding
-                '-movflags', '+faststart',  # Optimize for web playback
-                '-f', 'mp4',  # Force MP4 container
-                '-metadata', 'comment=compressed',
-                '-loglevel', 'error',
-                output_file
+                "ffmpeg",
+                "-i",
+                input_file,
+                "-c:v",
+                "libx264",
+                "-crf",
+                "23",
+                "-metadata",
+                "comment="+cls.COMPRESSED_MESSAGE,
+                "-preset",
+                "medium",
+                output_file,
             ]
-            cls.run_subprocess_with_flags(
-                cmd,
-                capture_output=True,
-                check=True
-            )
+            cls.run_subprocess_with_flags(cmd, capture_output=True, check=True)
             cls.LOGGER.info(f"Converted video: {input_file} to {output_file}")
         except subprocess.CalledProcessError as e:
+            print(str(e.stderr))
             cls.LOGGER.error(
                 f"An error occurred while converting: {input_file}. ERROR MESSAGE: {e.stderr.decode()}"
             )
@@ -146,20 +146,22 @@ class VideoCompressor:
     def compress_video_cpu(cls, input_file, output_file, bitrate, framerate=FRAMERATE):
         try:
             cmd = [
-                'ffmpeg',
-                '-i', input_file,
-                '-b:v', bitrate,
-                '-vcodec', 'libx264',  # CPU-based compression codec
-                '-r', str(framerate),
-                '-metadata', 'comment=compressed',
-                '-loglevel', 'error',  # Suppress info, show only errors
-                output_file
+                "ffmpeg",
+                "-i",
+                input_file,
+                "-b:v",
+                bitrate,
+                "-vcodec",
+                "libx264",
+                "-r",
+                str(framerate),
+                "-metadata",
+                "comment="+cls.COMPRESSED_MESSAGE,
+                "-loglevel",
+                "error",
+                output_file,
             ]
-            cls.run_subprocess_with_flags(
-                cmd,
-                capture_output=True,
-                check=True
-            )
+            cls.run_subprocess_with_flags(cmd, capture_output=True, check=True)
             cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
         except subprocess.CalledProcessError as e:
             cls.LOGGER.error(
@@ -176,12 +178,12 @@ class VideoCompressor:
             cls.compress_video_cpu(input_file, output_file, bitrate, framerate)
 
     @classmethod
-    def get_video_files(cls, input_directory):
+    def get_video_files(cls, input_directory, filetypes=VIDEO_FILETYPES):
         """Get a list of video files in the specified directory."""
         video_files = []
         for root, _, files in os.walk(input_directory):
             for file in files:
-                if any(file.lower().endswith(ext) for ext in VIDEO_FILETYPES):
+                if any(file.lower().endswith(ext) for ext in filetypes):
                     if not cls.is_video_processed(os.path.join(root, file)):
                         video_files.append(os.path.join(root, file))
                     else:
@@ -231,6 +233,55 @@ class VideoCompressor:
                     input_file, output_file, bitrate, video_codec, framerate
                 )
 
+                # Update processed size
+                processed_size += os.path.getsize(input_file)
+
+            except Exception as e:
+                cls.LOGGER.error(
+                    f"Uncaught error occurred while compressing:{input_file}. ERROR MESSAGE: {str(e)}"
+                )
+
+        if progress_callback:
+            progress_callback(1, "", total_files, total_files)
+        cls.LOGGER.info(f"Finished compressing videos in directory:{input_directory}")
+
+    @classmethod
+    def convert_incompatible_videos_in_directory_and_compress(
+        cls, input_directory, output_directory, progress_callback=None, framerate=30
+    ):
+        setup_logging(output_directory)
+        cls.LOGGER = logging.getLogger(__name__)
+
+        cls.LOGGER.info(
+            f"Started converting incompatible filetype videos in directory:{input_directory}"
+        )
+
+        # Gather video files
+        video_files = cls.get_video_files(
+            input_directory, filetypes=INCOMPATIBLE_FILETYPES
+        )
+
+        # Calculate total size of all files
+        total_size = sum(os.path.getsize(f) for f in video_files)
+        processed_size = 0
+
+        # Process each video file
+        total_files = len(video_files)
+        for idx, input_file in enumerate(video_files, start=0):
+            try:
+                # Update progress
+                if progress_callback:
+                    progress = processed_size / total_size if total_size > 0 else 0
+                    progress_callback(progress, input_file, idx, total_files)
+
+                # Calculate output file path
+                relative_path = os.path.relpath(input_file, input_directory)
+                output_file = os.path.join(output_directory, relative_path)
+                output_file = os.path.splitext(output_file)[0] + ".mp4"
+                os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+                cls.convert_incompatible_video(input_file, output_file)
+                
                 # Update processed size
                 processed_size += os.path.getsize(input_file)
 

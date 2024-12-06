@@ -19,5 +19,7 @@ Todo:
   ✔ Update directory input @done(24-12-01 17:00)
   ✔ Add UI testing @done(24-12-04 17:46)
   ✔ Fix ETA calculation @done(24-12-04 19:24)
-  ☐ Add Images/Video radio buttons
-  ☐ Add option to convert H264 to mp4 before conversion
+  ✔ Add Images/Video radio buttons @done(24-12-06 09:35)
+  ✔ Add option to convert H264 to mp4 before conversion @done(24-12-06 11:54)
+  ☐ Option to prevent reconversion of already converted files
+  ☐ Add security/integrity tests
