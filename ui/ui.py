@@ -47,6 +47,8 @@ class CompressorApp(ctk.CTk):
 
         self.directory_string_var = StringVar()
         self.directory_string_var.set(self.SELECT_DIRECTORY_TEXT)
+        self.directory_string_var.trace_add("write", lambda *args: self.on_text_change())
+        
         self.directory = ""
 
         self.widgets["dir_input"] = ctk.CTkEntry(
@@ -150,7 +152,7 @@ class CompressorApp(ctk.CTk):
             widget.pack_forget()
 
     def on_text_change(self, *args):
-        self.directory = self.widgets["dir_input"].get()
+        self.directory = self.directory_string_var.get()
 
     def select_directory(self):
         # Open directory selection dialog

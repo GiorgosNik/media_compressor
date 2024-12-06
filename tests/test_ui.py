@@ -109,3 +109,64 @@ def test_show_help_message(mock_webbrowser, app, mock_messagebox):
     # Assert
     mock_messagebox.assert_called_once()
     mock_webbrowser.open.assert_called_once()
+
+def test_clear_ui(app):
+    # Arrange
+    widget = mock.Mock()
+    app.widgets = {'test_widget': widget}
+    
+    # Act
+    app.clear_ui()
+    
+    # Assert
+    widget.pack_forget.assert_called_once()
+
+@mock.patch('ui.ui.os')
+def test_open_output_directory_windows(mock_os, app):
+    # Arrange  
+    mock_os.name = 'nt'
+    app.directory = "/test/path"
+    
+    # Act
+    app.open_output_directory()
+    
+    # Assert
+    mock_os.startfile.assert_called_once_with('/test/path')
+
+def test_on_text_change(app):
+    # Arrange
+    app.widgets["dir_input"].insert(0, "/test/path")
+    
+    # Act
+    app.directory_string_var.set("/test/path")
+    
+    # Assert
+    assert app.directory == "/test/path"
+
+def test_on_global_click_outside_input(app):
+    # Arrange
+    mock_event = mock.Mock()
+    mock_event.widget = mock.Mock()
+    app.directory_string_var.set("")
+    
+    # Act
+    app.on_global_click(mock_event)
+    
+    # Assert
+    assert app.directory_string_var.get() == app.SELECT_DIRECTORY_TEXT
+
+@mock.patch('ui.ui.Handler')
+@mock.patch('threading.Thread')
+def test_compress_media(mock_thread, mock_handler, app):
+    # Arrange
+    input_dir = "/test/path"
+    app.process_video = True
+    app.process_image = True 
+    app.convert_incompatible = True
+    app.running = True
+    
+    # Act
+    app.compress_media(input_dir)
+    
+    # Assert
+    mock_handler.start_compression.assert_called_once()
