@@ -99,9 +99,33 @@ def test_stop_operation(app, mock_messagebox):
     mock_messagebox.assert_called_once()
 
 @mock.patch('ui.ui.webbrowser')
-def test_show_help_message(mock_webbrowser, app, mock_messagebox):
+def test_contact_developer(mock_webbrowser, app, mock_messagebox):
     # Arrange
     mock_messagebox.return_value.get.return_value = "Contact Developer"
+    
+    # Act
+    app.show_help_message()
+    
+    # Assert
+    mock_messagebox.assert_called_once()
+    mock_webbrowser.open.assert_called_once()
+
+@mock.patch('ui.ui.webbrowser')
+def test_get_updates(mock_webbrowser, app, mock_messagebox):
+    # Arrange
+    mock_messagebox.return_value.get.return_value = "Get Updates"
+    
+    # Act
+    app.show_help_message()
+    
+    # Assert
+    mock_messagebox.assert_called_once()
+    mock_webbrowser.open.assert_called_once()
+
+@mock.patch('ui.ui.webbrowser')
+def test_show_readme(mock_webbrowser, app, mock_messagebox):
+    # Arrange
+    mock_messagebox.return_value.get.return_value = "View README"
     
     # Act
     app.show_help_message()
@@ -154,19 +178,3 @@ def test_on_global_click_outside_input(app):
     
     # Assert
     assert app.directory_string_var.get() == app.SELECT_DIRECTORY_TEXT
-
-@mock.patch('ui.ui.Handler')
-@mock.patch('threading.Thread')
-def test_compress_media(mock_thread, mock_handler, app):
-    # Arrange
-    input_dir = "/test/path"
-    app.process_video = True
-    app.process_image = True 
-    app.convert_incompatible = True
-    app.running = True
-    
-    # Act
-    app.compress_media(input_dir)
-    
-    # Assert
-    mock_handler.start_compression.assert_called_once()

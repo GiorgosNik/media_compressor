@@ -15,3 +15,4 @@ build/
 dist/
 *GEP Media Compressor.exe
 *.spec
+coverage.xml
