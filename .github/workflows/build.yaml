@@ -67,7 +67,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build_and_release_installer:
-    needs: test_windows # Run only after the Windows tests pass
+    needs: test_ubuntu # Run only after the Windows tests pass
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
     permissions:
