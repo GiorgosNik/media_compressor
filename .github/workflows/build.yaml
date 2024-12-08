@@ -92,12 +92,22 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Get version components
+      run: |
+        VERSION_MAJOR=$(echo "${{ env.VERSION }}" | cut -d. -f1)
+        VERSION_MINOR=$(echo "${{ env.VERSION }}" | cut -d. -f2)
+        VERSION_PATCH=$(echo "${{ env.VERSION }}" | cut -d. -f3)
+        echo "VERSION_MAJOR=$VERSION_MAJOR" >> $GITHUB_ENV
+        echo "VERSION_MINOR=$VERSION_MINOR" >> $GITHUB_ENV
+        echo "VERSION_PATCH=$VERSION_PATCH" >> $GITHUB_ENV
+      shell: bash
+
     - name: Create version file
       run: |
         echo "VSVersionInfo(
           ffi=FixedFileInfo(
-            filevers=(${{ env.VERSION.split('.')[0] }}, ${{ env.VERSION.split('.')[1] }}, ${{ env.VERSION.split('.')[2] }}, 0),
-            prodvers=(${{ env.VERSION.split('.')[0] }}, ${{ env.VERSION.split('.')[1] }}, ${{ env.VERSION.split('.')[2] }}, 0),
+            filevers=($VERSION_MAJOR, $VERSION_MINOR, $VERSION_PATCH, 0),
+            prodvers=($VERSION_MAJOR, $VERSION_MINOR, $VERSION_PATCH, 0),
             mask=0x3f,
             flags=0x0,
             OS=0x40004,
@@ -108,8 +118,8 @@ jobs:
           kids=[
             StringFileInfo([StringTable(
               u'040904B0',
-              [StringStruct(u'FileVersion', u'${{ env.VERSION }}'),
-                StringStruct(u'ProductVersion', u'${{ env.VERSION }}'),
+              [StringStruct(u'FileVersion', u'$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH'),
+                StringStruct(u'ProductVersion', u'$VERSION_MAJOR.$VERSION_MINOR.$VERSION_PATCH'),
                 StringStruct(u'ProductName', u'GEP Media Compressor'),
                 StringStruct(u'FileDescription', u'GEP Media Compressor')])]),
             VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
