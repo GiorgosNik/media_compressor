@@ -89,7 +89,7 @@ jobs:
 
     - name: Build executable
       run: |
-        pyinstaller --onefile --icon=./assets/ges.ico --name "GEP Media Compressor" --noconsole --windowed main.py
+        pyinstaller --onefile --icon=./assets/ges.ico --collect-all tkinterdnd2 --name "GEP Media Compressor" --noconsole --windowed main.py
 
     - name: Compile .ISS to .EXE Installer
       uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
