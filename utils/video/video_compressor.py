@@ -16,7 +16,7 @@ class VideoCompressor:
 
     @classmethod
     def run_subprocess_with_flags(cls, cmd, **kwargs):
-        if sys.platform == "win32":
+        if sys.platform == "win32": #pragma: no cover
             kwargs["encoding"] = "utf-8"
             kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
         return subprocess.run(cmd, **kwargs)
@@ -236,7 +236,7 @@ class VideoCompressor:
                 # Update processed size
                 processed_size += os.path.getsize(input_file)
 
-            except Exception as e:
+            except Exception as e: #pragma: no cover
                 cls.LOGGER.error(
                     f"Uncaught error occurred while compressing:{input_file}. ERROR MESSAGE: {str(e)}"
                 )
@@ -285,7 +285,7 @@ class VideoCompressor:
                 # Update processed size
                 processed_size += os.path.getsize(input_file)
 
-            except Exception as e:
+            except Exception as e: #pragma: no cover
                 cls.LOGGER.error(
                     f"Uncaught error occurred while compressing:{input_file}. ERROR MESSAGE: {str(e)}"
                 )
