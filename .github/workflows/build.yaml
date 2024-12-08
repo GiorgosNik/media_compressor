@@ -67,64 +67,38 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build_and_release_installer:
-      needs: test_ubuntu
-      runs-on: windows-latest
-      if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
-      permissions:
-        contents: write
+    needs: test_ubuntu # Run only after the Windows tests pass
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
+    permissions:
+      contents: write
 
-      steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Extract version from tag
-        id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
 
-      - name: Generate version file
-        run: |
-          echo "# UTF-8" > version.txt
-          echo "VSVersionInfo(" >> version.txt
-          echo "  ffi=FixedFileInfo(" >> version.txt
-          echo "    filevers=(${version//./,}, 0)," >> version.txt
-          echo "    prodvers=(${version//./,}, 0)," >> version.txt
-          echo "    mask=0x3f," >> version.txt
-          echo "    flags=0x0," >> version.txt
-          echo "    OS=0x4," >> version.txt
-          echo "    fileType=0x1," >> version.txt
-          echo "    subtype=0x0," >> version.txt
-          echo "    date=(0, 0)" >> version.txt
-          echo "  )," >> version.txt
-          echo "  kids=[StringFileInfo([" >> version.txt
-          echo "    [\"FileDescription\", \"GEP Media Compressor\"]," >> version.txt
-          echo "    [\"FileVersion\", \"${version}\"]," >> version.txt
-          echo "    [\"ProductName\", \"GEP Media Compressor\"]," >> version.txt
-          echo "    [\"ProductVersion\", \"${version}\"]," >> version.txt
-          echo "  ]), VarFileInfo([(\"Translation\", [1033, 1200])])]" >> version.txt
-          echo ")" >> version.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
+    - name: Build executable
+      run: |
+        pyinstaller --onefile --icon=./assets/ges.ico --name "GEP Media Compressor" --noconsole --windowed main.py
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Compile .ISS to .EXE Installer
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      with:
+        path: utils/setup/setup.iss
 
-      - name: Build executable
-        run: |
-          pyinstaller --onefile --icon=./assets/ges.ico --version-file=version.txt --noconsole --windowed main.py
-
-      - name: Compile .ISS to .EXE Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-        with:
-          path: utils/setup/setup.iss
-
-      - name: Upload Installer to Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/GEP Media Compressor Installer.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload Installer to Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/GEP Media Compressor Installer.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
