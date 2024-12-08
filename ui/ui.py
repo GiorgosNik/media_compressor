@@ -7,16 +7,18 @@ from utils.handler.handler import Handler
 from datetime import datetime
 import time
 import webbrowser
+from tkinterdnd2 import TkinterDnD, DND_ALL
 
 
 # Create the main application class
-class CompressorApp(ctk.CTk):
+class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self):
         super().__init__()
         self.title("GEP Media Compressor")
         self.iconbitmap("./assets/ges.ico")
         self.geometry("500x200")
         self.running = False
+        self.TkdndVersion = TkinterDnD._require(self)
 
         # Define constants
         self.SELECT_DIRECTORY_TEXT = "Select a directory"
@@ -27,9 +29,16 @@ class CompressorApp(ctk.CTk):
 
         # UI widget storage
         self.widgets = {}
-
-        # Initial UI setup
+        self.drop_target_register(DND_ALL)
+        self.dnd_bind("<<Drop>>", self.get_path)
         self.setup_initial_ui()
+
+    def get_path(self, event):
+        dropped_location = event.data.replace("{","").replace("}", "")
+        if not self.running and os.path.isdir(dropped_location):
+            self.clear_placeholder(None)
+            self.directory = dropped_location
+            self.directory_string_var.set(self.directory)
 
     def open_output_directory(self):
         # Open the directory in the file explorer

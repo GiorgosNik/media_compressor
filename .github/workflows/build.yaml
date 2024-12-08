@@ -67,7 +67,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   build_and_release_installer:
-    needs: test_ubuntu # Run only after the Windows tests pass
+    needs: test_ubuntu 
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/v') # Only run on version tags
     permissions:
@@ -76,6 +76,11 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+      shell: bash
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -87,9 +92,35 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Create version file
+      run: |
+        echo "VSVersionInfo(
+          ffi=FixedFileInfo(
+            filevers=(${{ env.VERSION.split('.')[0] }}, ${{ env.VERSION.split('.')[1] }}, ${{ env.VERSION.split('.')[2] }}, 0),
+            prodvers=(${{ env.VERSION.split('.')[0] }}, ${{ env.VERSION.split('.')[1] }}, ${{ env.VERSION.split('.')[2] }}, 0),
+            mask=0x3f,
+            flags=0x0,
+            OS=0x40004,
+            fileType=0x1,
+            subtype=0x0,
+            date=(0, 0)
+          ),
+          kids=[
+            StringFileInfo([StringTable(
+              u'040904B0',
+              [StringStruct(u'FileVersion', u'${{ env.VERSION }}'),
+                StringStruct(u'ProductVersion', u'${{ env.VERSION }}'),
+                StringStruct(u'ProductName', u'GEP Media Compressor'),
+                StringStruct(u'FileDescription', u'GEP Media Compressor')])]),
+            VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+          ]
+        )" > version.txt
+
     - name: Build executable
       run: |
-        pyinstaller --onefile --icon=./assets/ges.ico --name "GEP Media Compressor" --noconsole --windowed main.py
+        pyinstaller --onefile --icon=./assets/ges.ico --name "GEP Media Compressor" --noconsole --windowed --version-file=version.txt main.py
+      env:
+        VERSION: ${{ env.VERSION }}
 
     - name: Compile .ISS to .EXE Installer
       uses: Minionguyjpro/Inno-Setup-Action@v1.2.2

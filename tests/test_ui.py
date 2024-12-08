@@ -178,3 +178,17 @@ def test_on_global_click_outside_input(app):
     
     # Assert
     assert app.directory_string_var.get() == app.SELECT_DIRECTORY_TEXT
+    
+def test_get_path(app):
+    # Arrange
+    mock_event = mock.Mock()
+    mock_event.data = "{/test/path}"
+    app.running = False
+    
+    with mock.patch('os.path.isdir', return_value=True):
+        # Act
+        app.get_path(mock_event)
+        
+        # Assert
+        assert app.directory == "/test/path"
+        assert app.directory_string_var.get() == "/test/path"
