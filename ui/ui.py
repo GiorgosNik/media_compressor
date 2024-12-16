@@ -329,6 +329,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
 
         finally:
             self.updater_running = False
+            Handler.cleanup_logging()
             self.setup_initial_ui()
 
     def show_operation_completed_message(self):

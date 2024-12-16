@@ -19,9 +19,24 @@ class Handler:
         cls.LOGGER = logging.getLogger(__name__)
         cls.LOGGER.info(f"Output directory created: {output_directory}")
 
-        if process_video:
-            VideoCompressor.compress_videos_in_directory(input_directory, output_directory, progress_callback)
-        if process_image:
-            ImageCompressor.compress_images_in_directory(input_directory, output_directory, progress_callback)
-        if convert_incompatible:
-           VideoCompressor.convert_incompatible_videos_in_directory_and_compress(input_directory, output_directory, progress_callback)
+        try:
+            if process_video:
+                VideoCompressor.compress_videos_in_directory(input_directory, output_directory, progress_callback)
+            if process_image:
+                ImageCompressor.compress_images_in_directory(input_directory, output_directory, progress_callback)
+            if convert_incompatible:
+                VideoCompressor.convert_incompatible_videos_in_directory_and_compress(input_directory, output_directory, progress_callback)
+        finally:
+            cls.cleanup_logging()
+
+    @classmethod
+    def cleanup_logging(cls):
+        """Close all logging handlers"""
+        if cls.LOGGER:
+            for handler in cls.LOGGER.handlers[:]:
+                handler.close()
+                cls.LOGGER.removeHandler(handler)
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers[:]:
+            handler.close()
+            root_logger.removeHandler(handler)
