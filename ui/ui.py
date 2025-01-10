@@ -320,6 +320,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             # Notify the user upon successful completion
             if self.running:
                 self.show_operation_completed_message()
+                self.running = False
 
         except RuntimeError as e:
             # Notify the user of any errors encountered during compression
