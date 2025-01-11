@@ -6,6 +6,7 @@ OutputBaseFilename=GEP Media Compressor Installer
 DefaultDirName={autopf}\GEP Media Compressor    
 Compression=lzma
 SolidCompression=yes
+SetupIconFile=../../assets/ges.ico  
 
 [Files]
 Source: "../../dist/GEP Media Compressor.exe"; DestDir: "{app}"; Flags: ignoreversion
