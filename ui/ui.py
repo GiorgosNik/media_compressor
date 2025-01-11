@@ -10,6 +10,12 @@ import webbrowser
 from tkinterdnd2 import TkinterDnD, DND_ALL
 
 
+try:
+    from ctypes import windll
+    windll.shcore.SetProcessDpiAwareness(1)
+except Exception:
+    pass
+
 # Create the main application class
 class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self):
