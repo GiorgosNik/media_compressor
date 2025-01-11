@@ -171,6 +171,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
 
     def select_directory(self):
         # Open directory selection dialog
+        self.clear_placeholder(None)
         directory = filedialog.askdirectory()
         if directory:
             self.widgets["dir_input"].delete(0, ctk.END)
