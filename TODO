@@ -23,4 +23,6 @@ Todo:
   ✔ Add option to convert H264 to mp4 before conversion @done(24-12-06 11:54)
   ✔ Add drag and drop support @done(24-12-08 14:48)
   ✔ Fix bug when moving between monitors @done(25-01-11 09:22)
-  ☐ Add Images to README
+  ✔ Add Images to README @done(25-01-11 10:21)
+  ☐ Fix colors for input field
+  ☐ Add images and customize installer

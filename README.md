@@ -11,6 +11,16 @@ A Python-based desktop application for efficient video and image compression wit
 - Cross-platform compatibility (Windows/Linux)
 - Simple and intuitive UI
 
+<div style="display: inline-block; width: 400px;">
+    <img src="assets/images/initial_state.png" alt="Initial UI state" width="400">
+    <p style="text-align: center;"><em>Initial UI state</em></p>
+</div>
+
+<div style="display: inline-block; width: 400px;">
+    <img src="assets/images/in_progress.png" alt="Compression in progress" width="400">
+    <p style="text-align: center;"><em>Compression in progress</em></p>
+</div>
+
 ## Technical Overview
 
 ### Core Technologies
@@ -79,9 +89,6 @@ python main.py
 ```bash
 pytest tests/
 ```
-
-## License
-MIT License
 
 ## Support
 Issues: GitHub Issues
