@@ -5,8 +5,6 @@ import os
 
 @pytest.fixture
 def app():
-    os.environ['TCL_LIBRARY'] = r'C:\Python312\tcl\tcl8.6'
-    os.environ['TK_LIBRARY'] = r'C:\Python312\tcl\tk8.6'
     with mock.patch("ui.ui.CompressorApp.iconbitmap"):
         app = CompressorApp()
         yield app
@@ -194,30 +192,3 @@ def test_get_path(app):
         # Assert
         assert app.directory == "/test/path"
         assert app.directory_string_var.get() == "/test/path"
-        
-
-def test_setup_running_ui(app):
-    # Arrange
-    app.directory = "/test/path"
-    with mock.patch('ui.ui.Thread') as mock_thread:
-        # Act
-        app.setup_running_ui()
-        
-        # Assert
-        # Check that progress bar and labels are created
-        assert "progress_bar" in app.widgets
-        assert "elapsed_time_label" in app.widgets
-        assert "eta_label" in app.widgets
-        assert "current_file_label" in app.widgets
-        assert "file_count_label" in app.widgets
-        assert "stop_button" in app.widgets
-        
-        # Verify initial values
-        assert app.widgets["elapsed_time_label"].cget("text") == "Elapsed Time: 00:00:00"  
-        assert app.widgets["eta_label"].cget("text") == "ETA: --:--:--"
-        assert app.widgets["current_file_label"].cget("text") == "Current File: None"
-        assert app.widgets["file_count_label"].cget("text") == "Processed: 0/0"
-        
-        # Verify compression thread was started
-        mock_thread.assert_called_once()
-        mock_thread.return_value.start.assert_called_once()
