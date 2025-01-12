@@ -1,7 +1,6 @@
 import pytest
 from unittest import mock
 from ui.ui import CompressorApp
-import os
 
 @pytest.fixture
 def app():
@@ -192,3 +191,41 @@ def test_get_path(app):
         # Assert
         assert app.directory == "/test/path"
         assert app.directory_string_var.get() == "/test/path"
+
+def test_setup_running_ui(app):
+    # Arrange
+    app.clear_ui = mock.Mock() 
+    app.compress_media = mock.Mock()  
+    app.directory = "/test/path"
+    assert 1==1
+    with mock.patch("ui.ui.Thread") as mock_thread, \
+         mock.patch("ui.ui.ctk.CTkProgressBar") as MockProgressBar, \
+         mock.patch("ui.ui.ctk.CTkLabel") as MockLabel, \
+         mock.patch("ui.ui.ctk.CTkButton") as MockButton:
+        
+        # Mock UI elements
+        mock_progress_bar = MockProgressBar.return_value
+        mock_label = MockLabel.return_value
+        mock_button = MockButton.return_value
+        mock_thread_instance = mock_thread.return_value
+
+        # Act
+        app.setup_running_ui()
+
+        # Assert
+        app.clear_ui.assert_called_once()
+
+        # Ensure widgets are created and packed correctly
+        MockProgressBar.assert_called_once_with(app, orientation="horizontal", width=400)
+        mock_progress_bar.pack.assert_called_once_with(pady=10)
+        mock_progress_bar.set.assert_called_once_with(0)
+
+        assert MockLabel.call_count == 4
+        mock_label.pack.assert_any_call()
+
+        MockButton.assert_called_once_with(app, text="Stop Compression", command=app.stop_operation)
+        mock_button.pack.assert_called_once_with(pady=10)
+
+        # Ensure compress_media starts in a new thread
+        mock_thread.assert_called_once_with(target=app.compress_media, args=(app.directory,))
+        mock_thread_instance.start.assert_called_once()
