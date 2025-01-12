@@ -197,7 +197,6 @@ def test_setup_running_ui(app):
     app.clear_ui = mock.Mock() 
     app.compress_media = mock.Mock()  
     app.directory = "/test/path"
-    assert 1==1
     with mock.patch("ui.ui.Thread") as mock_thread, \
          mock.patch("ui.ui.ctk.CTkProgressBar") as MockProgressBar, \
          mock.patch("ui.ui.ctk.CTkLabel") as MockLabel, \
