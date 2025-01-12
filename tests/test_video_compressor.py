@@ -9,6 +9,7 @@ import ffmpeg
 from utils.video.video_compressor import VideoCompressor
 from unittest.mock import patch
 import os
+from utils.handler.handler import Handler
 
 # Test setup
 @pytest.fixture
@@ -422,3 +423,42 @@ def test_convert_incompatible_video_error(mock_logger):
         mock_logger.error.assert_called_once_with(
             f"An error occurred while converting: {input_file}. ERROR MESSAGE: {error_message}"
         ) 
+        
+@mock.patch('utils.handler.handler.VideoCompressor')
+@mock.patch('utils.handler.handler.ImageCompressor')
+@mock.patch('utils.handler.handler.setup_logging')
+def test_start_compression(mock_setup_logging, mock_image_compressor, mock_video_compressor, mock_logger):
+    # Arrange
+    input_directory = "path/to/input"
+    process_video = True
+    process_image = True 
+    convert_incompatible = True
+    progress_callback = mock.Mock()
+
+    # Act
+    Handler.start_compression(
+        input_directory=input_directory,
+        process_video=process_video,
+        process_image=process_image, 
+        convert_incompatible=convert_incompatible,
+        progress_callback=progress_callback
+    )
+
+    # Assert
+    mock_setup_logging.assert_called_once()
+    mock_video_compressor.compress_videos_in_directory.assert_called_once_with(
+        input_directory, 
+        mock.ANY, 
+        progress_callback
+    )
+    mock_image_compressor.compress_images_in_directory.assert_called_once_with(
+        input_directory,
+        mock.ANY,  
+        progress_callback
+    )
+    mock_video_compressor.convert_incompatible_videos_in_directory_and_compress.assert_called_once_with(
+        input_directory,
+        mock.ANY,  
+        progress_callback
+    )
+
