@@ -12,7 +12,12 @@ class Handler:
     @classmethod
     def start_compression(cls, input_directory, process_video, process_image, convert_incompatible, progress_callback=None):
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-        output_directory = f"{input_directory}/output_{timestamp}"
+        
+        if os.path.isfile(input_directory):
+            output_directory = f"{os.path.dirname(input_directory)}/output_{timestamp}"
+        else:
+            output_directory = f"{input_directory}/output_{timestamp}"
+            
         os.makedirs(output_directory, exist_ok=True)
 
         setup_logging(output_directory)

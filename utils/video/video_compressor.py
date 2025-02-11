@@ -181,6 +181,28 @@ class VideoCompressor:
     def get_video_files(cls, input_directory, filetypes=VIDEO_FILETYPES):
         """Get a list of video files in the specified directory."""
         video_files = []
+        if(os.path.isdir(input_directory)):
+            video_files += (cls.get_video_files_from_directory(input_directory, filetypes))
+        else:
+            video_files += cls.check_singular_file(input_directory, filetypes)
+        return video_files
+            
+    @classmethod
+    def check_singular_file(cls, input_file, filetypes=VIDEO_FILETYPES):
+        root = os.path.dirname(input_file)
+        video_files = []
+        if any(input_file.lower().endswith(ext) for ext in filetypes):
+            if not cls.is_video_processed(os.path.join(root, input_file)):
+                video_files =  [os.path.join(root, input_file)]
+            else:
+                cls.LOGGER.info(
+                    f"Skipping video:{os.path.join(root, input_file)} as it is already processed"
+                )
+        return video_files
+    
+    @classmethod
+    def get_video_files_from_directory(cls, input_directory, filetypes=VIDEO_FILETYPES):
+        video_files = []
         for root, _, files in os.walk(input_directory):
             for file in files:
                 if any(file.lower().endswith(ext) for ext in filetypes):
@@ -191,6 +213,15 @@ class VideoCompressor:
                             f"Skipping video:{os.path.join(root, file)} as it is already processed"
                         )
         return video_files
+
+    @classmethod
+    def calculate_output_path(cls, input_file, input_directory, output_directory):
+        if(input_file != input_directory):
+            relative_path = os.path.relpath(input_file, input_directory)
+            output_file = os.path.join(output_directory, relative_path)
+        else:
+            output_file = os.path.join(output_directory, os.path.basename(input_file))
+        return output_file
 
     @classmethod
     def compress_videos_in_directory(
@@ -221,9 +252,8 @@ class VideoCompressor:
                     progress_callback(progress, input_file, idx, total_files)
 
                 # Calculate output file path
-                relative_path = os.path.relpath(input_file, input_directory)
-                output_file = os.path.join(output_directory, relative_path)
-                os.makedirs(os.path.dirname(output_file), exist_ok=True)
+                output_file = cls.calculate_output_path(input_file, input_directory, output_directory)
+                os.makedirs(os.path.dirname(output_directory), exist_ok=True)
 
                 # Calculate bitrate
                 bitrate = cls.get_bitrate(input_file)

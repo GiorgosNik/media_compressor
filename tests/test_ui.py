@@ -19,6 +19,11 @@ def mock_messagebox():
 def mock_filedialog():
     with mock.patch('tkinter.filedialog.askdirectory') as mock_fd:
         yield mock_fd
+        
+@pytest.fixture
+def mock_filedialogsingle():
+    with mock.patch('tkinter.filedialog.askopenfilename') as mock_fd:
+        yield mock_fd
 
 def test_init(app):
     assert app.title() == "GEP Media Compressor"
@@ -42,6 +47,17 @@ def test_select_directory(app, mock_filedialog):
     
     # Act
     app.select_directory()
+    
+    # Assert
+    assert app.directory == "/test/path"
+    assert app.widgets["dir_input"].get() == "/test/path"
+    
+def test_select_file(app, mock_filedialogsingle):
+    # Arrange
+    mock_filedialogsingle.return_value = "/test/path"
+    
+    # Act
+    app.select_file()
     
     # Assert
     assert app.directory == "/test/path"

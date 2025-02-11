@@ -29,6 +29,11 @@ def mock_ffmpeg():
 def mock_os_walk():
     with mock.patch('os.walk') as mock_walk:
         yield mock_walk
+        
+@pytest.fixture
+def mock_os_path_isdir():
+    with mock.patch('os.path.isdir') as mock_path_isdir:
+        yield mock_path_isdir
              
 def test_is_video_processed(mock_logger):
     # Arrange
@@ -224,10 +229,11 @@ def test_compress_video_qsv_subprocess_error(mock_logger):
             f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {error_message}"
         )
         
-def test_get_video_files(mock_os_walk, mock_logger):
+def test_get_video_files(mock_os_walk, mock_os_path_isdir, mock_logger):
     # Arrange
     input_directory = "path/to/videos"
     mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.avi"])]
+    mock_os_path_isdir.return_value = True
     VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
 
     # Act
@@ -249,27 +255,35 @@ def test_get_video_files_processed(mock_os_walk, mock_logger):
     # Assert
     assert len(result) == 0
 
-def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
+def test_compress_videos_in_directory(mock_os_walk, mock_os_path_isdir, mock_logger):
     # Arrange
     input_directory = "path/to/input"
     output_directory = "path/to/output"
-    mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.mp4"])]
+    progress_callback = mock.Mock()
+    mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.avi"])]
+    mock_os_path_isdir.return_value = True
     
-    VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
-    VideoCompressor.get_bitrate = mock.MagicMock(return_value="1000K")
-    VideoCompressor.is_codec_available = mock.MagicMock(return_value=True)
-    VideoCompressor.compress_video = mock.MagicMock()
-    
-    with mock.patch('os.path.getsize', return_value=1000000):
+    with mock.patch.multiple(VideoCompressor,
+        select_best_codec=mock.Mock(return_value="h264_qsv"),
+        get_video_files=mock.Mock(return_value=["path/to/input/video1.mp4", "path/to/input/video2.avi"]),
+        get_bitrate=mock.Mock(return_value="1000K"),
+        compress_video=mock.Mock(),
+        is_video_processed=mock.Mock(return_value=False)), \
+        mock.patch('os.path.getsize', return_value=1000000), \
+        mock.patch('os.makedirs'):
+
         # Act
         VideoCompressor.compress_videos_in_directory(
-            input_directory, 
-            output_directory,
-            progress_callback=None
+            input_directory,
+            output_directory, 
+            progress_callback=progress_callback
         )
 
-    # Assert
-    VideoCompressor.compress_video.assert_called()
+        # Assert
+        VideoCompressor.select_best_codec.assert_called_once()
+        VideoCompressor.get_video_files.assert_called_once_with(input_directory)
+        assert VideoCompressor.compress_video.call_count == 2
+        progress_callback.assert_called()
 
 @patch('subprocess.run')
 def test_compress_video_cpu(mock_subprocess_run, mock_logger):
@@ -361,25 +375,36 @@ def test_convert_incompatible_video_error(mock_logger):
         mock_logger.error.assert_called_once_with(
             f"An error occurred while converting: {input_file}. ERROR MESSAGE: {error_message}"
         )
-def test_convert_incompatible_videos_in_directory_and_compress(mock_os_walk, mock_logger):
-    # Arrange
+        
+def test_convert_incompatible_videos_in_directory_and_compress(mock_os_walk, mock_os_path_isdir, mock_logger):
+    # Arrange 
     input_directory = "path/to/input"
     output_directory = "path/to/output"
+    progress_callback = mock.Mock()
     mock_os_walk.return_value = [(input_directory, [], ["video1.h264", "video2.h264"])]
+    mock_os_path_isdir.return_value = True
     
-    VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
-    VideoCompressor.convert_incompatible_video = mock.MagicMock()
-    
-    with mock.patch('os.path.getsize', return_value=1000000):
+    with mock.patch.multiple(VideoCompressor,
+        get_video_files=mock.Mock(return_value=["path/to/input/video1.h264", "path/to/input/video2.h264"]),
+        convert_incompatible_video=mock.Mock(),
+        is_video_processed=mock.Mock(return_value=False)), \
+        mock.patch('os.path.getsize', return_value=1000000), \
+        mock.patch('os.makedirs'):
+
         # Act
         VideoCompressor.convert_incompatible_videos_in_directory_and_compress(
-            input_directory, 
+            input_directory,
             output_directory,
-            progress_callback=None
+            progress_callback=progress_callback
         )
 
-    # Assert
-    VideoCompressor.convert_incompatible_video.assert_called()
+        # Assert
+        VideoCompressor.get_video_files.assert_called_once_with(
+            input_directory, 
+            filetypes=[".h264"]
+        )
+        assert VideoCompressor.convert_incompatible_video.call_count == 2
+        progress_callback.assert_called()
 
 @patch('subprocess.run')
 def test_convert_incompatible_video(mock_subprocess_run, mock_logger):

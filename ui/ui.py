@@ -41,7 +41,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
 
     def get_path(self, event):
         dropped_location = event.data.replace("{","").replace("}", "")
-        if not self.running and os.path.isdir(dropped_location):
+        if not self.running and (os.path.isdir(dropped_location) or os.path.isfile(dropped_location)):
             self.clear_placeholder(None)
             self.directory = dropped_location
             self.directory_string_var.set(self.directory)
@@ -90,6 +90,13 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             command=self.select_directory,
         )
         self.widgets["select_button"].pack(side="left", padx=10)
+        
+        self.widgets["file_select_button"] = ctk.CTkButton(
+            self.widgets["button_frame"],
+            text="Select File",
+            command=self.select_file,
+        )
+        self.widgets["file_select_button"].pack(side="left", padx=10)
 
         self.widgets["start_button"] = ctk.CTkButton(
             self.widgets["button_frame"],
@@ -177,6 +184,15 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             self.widgets["dir_input"].delete(0, ctk.END)
             self.widgets["dir_input"].insert(0, directory)
             self.directory = directory
+            
+    def select_file(self):
+        # Open file selection dialog
+        self.clear_placeholder(None)
+        given_file = filedialog.askopenfilename()
+        if given_file:
+            self.widgets["dir_input"].delete(0, ctk.END)
+            self.widgets["dir_input"].insert(0, given_file)
+            self.given_file = given_file
 
     def show_help_message(self):
         option = CTkMessagebox(
@@ -210,8 +226,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
                 icon="cancel",
             ).get()
             return
-
-        if not os.path.isdir(self.directory):
+        if not (os.path.isdir(self.directory) or os.path.isfile(self.directory)):
             CTkMessagebox(
                 title="Error",
                 message="The selected directory is not valid. Please select a valid directory.",
