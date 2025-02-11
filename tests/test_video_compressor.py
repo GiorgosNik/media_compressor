@@ -29,6 +29,11 @@ def mock_ffmpeg():
 def mock_os_walk():
     with mock.patch('os.walk') as mock_walk:
         yield mock_walk
+        
+@pytest.fixture
+def mock_os_path_isdir():
+    with mock.patch('os.path.isdir') as mock_path_isdir:
+        yield mock_path_isdir
              
 def test_is_video_processed(mock_logger):
     # Arrange
@@ -224,10 +229,11 @@ def test_compress_video_qsv_subprocess_error(mock_logger):
             f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {error_message}"
         )
         
-def test_get_video_files(mock_os_walk, mock_logger):
+def test_get_video_files(mock_os_walk, mock_os_path_isdir, mock_logger):
     # Arrange
     input_directory = "path/to/videos"
     mock_os_walk.return_value = [(input_directory, [], ["video1.mp4", "video2.avi"])]
+    mock_os_path_isdir.return_value = True
     VideoCompressor.is_video_processed = mock.MagicMock(return_value=False)
 
     # Act
