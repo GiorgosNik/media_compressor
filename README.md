@@ -2,6 +2,14 @@
 
 A Python-based desktop application for efficient video and image compression with drag-and-drop support.
 
+## Related army projects
+This repository is part of a series of automation apps that I created during my service in the Information and Research Bureau in the Greek Army.
+### Similar projects.
+- [weekly_report_automator](https://github.com/GiorgosNik/weekly_report_automator):
+C# application for automated PowerPoint report generation.
+- [powerpoint_automator](https://github.com/GiorgosNik/powerpoint_automator):
+Python automation tool for generating weather forecast videos.
+
 ## Features
 
 - Video and image compression
