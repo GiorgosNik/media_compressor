@@ -275,6 +275,7 @@ def test_compress_videos_in_directory(mock_os_walk, mock_ffmpeg, mock_logger):
         )
 
     # Assert
+    assert VideoCompressor.compress_video.call_count > 0, "compress_video was never called"
     VideoCompressor.compress_video.assert_called()
 
 @patch('subprocess.run')
