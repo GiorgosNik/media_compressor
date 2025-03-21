@@ -1,3 +1,4 @@
+import ctypes
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from tkinter import StringVar, filedialog
@@ -25,6 +26,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.geometry("500x200")
         self.running = False
         self.TkdndVersion = TkinterDnD._require(self)
+        self.thread = None
 
         # Define constants
         self.SELECT_DIRECTORY_TEXT = "Select a directory"
@@ -273,7 +275,8 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.widgets["stop_button"].pack(pady=10)
 
         # Start compression in a separate thread
-        Thread(target=self.compress_media, args=(self.directory,)).start()
+        self.thread = Thread(target=self.compress_media, args=(self.directory,))
+        self.thread.start()
 
     def compress_media(self, input_directory):
         try:
@@ -367,7 +370,15 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             self.open_output_directory()
 
     def stop_operation(self):
-        # Stop the running process
+        if not self.thread or self.thread.is_alive():
+            return
+        tid = ctypes.c_long(self.thread.ident)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            tid, ctypes.py_object(SystemExit)
+        )
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+            raise RuntimeError("Failed to kill thread")
         self.running = False
         self.eta_updater_running = False  # Stop the countdown
         CTkMessagebox(message="The operation has been stopped.").get()

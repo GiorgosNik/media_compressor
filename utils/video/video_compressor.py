@@ -114,7 +114,7 @@ class VideoCompressor:
             cls.LOGGER.info(f"Compressed video: {input_file} to {output_file}")
         except subprocess.CalledProcessError as e:
             cls.LOGGER.error(
-                f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {e.stderr.decode()}"
+                f"An error occurred while encoding: {input_file}. ERROR MESSAGE: {e.stderr}"
             )
 
     @classmethod
@@ -172,6 +172,8 @@ class VideoCompressor:
     def compress_video(
         cls, input_file, output_file, bitrate, video_codec, framerate=FRAMERATE
     ):
+        if not os.path.exists(os.path.dirname(output_file)):
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
         if video_codec == "h264_qsv":
             cls.compress_video_qsv(input_file, output_file, bitrate, framerate)
         else:
@@ -317,7 +319,7 @@ class VideoCompressor:
 
             except Exception as e: #pragma: no cover
                 cls.LOGGER.error(
-                    f"Uncaught error occurred while compressing:{input_file}. ERROR MESSAGE: {str(e)}"
+                    f"Uncaught error occurred while compressing incompatible file:{input_file}. ERROR MESSAGE: {str(e)}"
                 )
 
         if progress_callback:
