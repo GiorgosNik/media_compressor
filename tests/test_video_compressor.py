@@ -215,9 +215,9 @@ def test_compress_video_qsv_subprocess_error(mock_logger):
     output_file = "path/to/output.mp4" 
     bitrate = "1000K"
     framerate = 30
-    error_message = "Subprocess error"
+    error_message = b"Subprocess error"
     mock_error = subprocess.CalledProcessError(
-        1, "cmd", stderr=error_message.encode()
+        1, "cmd", stderr=error_message
     )
 
     with mock.patch("subprocess.run", side_effect=mock_error):

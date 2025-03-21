@@ -100,18 +100,26 @@ def test_start_application_valid_directory(app, mock_messagebox):
     mock_setup_running_ui.assert_called_once()
     mock_messagebox.assert_not_called()
 
-def test_stop_operation(app, mock_messagebox):
+def test_stop_operation(app):
     # Arrange
-    app.running = True
-    app.eta_updater_running = True
-    
-    # Act  
-    app.stop_operation()
-    
-    # Assert
-    assert app.running is False
-    assert app.eta_updater_running is False
-    mock_messagebox.assert_called_once()
+    app.thread = mock.Mock()
+    app.thread.is_alive.return_value = False
+    app.thread.ident = 1234
+    with mock.patch("ctypes.pythonapi.PyThreadState_SetAsyncExc", return_value=1) as mock_kill_thread, \
+            mock.patch("ui.ui.CTkMessagebox") as mock_msgbox, \
+            mock.patch.object(app, "setup_initial_ui") as mock_setup_ui:
+        app.running = True
+
+        # Act
+        app.stop_operation()
+
+        # Assert
+        mock_kill_thread.assert_called_once()
+        mock_msgbox.assert_called_once()
+        mock_setup_ui.assert_called_once()
+        assert app.running is False
+
+
 
 @mock.patch('ui.ui.webbrowser')
 def test_contact_developer(mock_webbrowser, app, mock_messagebox):
