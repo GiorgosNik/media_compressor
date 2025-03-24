@@ -332,7 +332,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
                 )
 
             # Call the compression handler with the callback
-            Handler.start_compression(
+            original_size, compressed_size, = Handler.start_compression(
                 input_directory=input_directory,
                 process_video=self.process_video,
                 process_image=self.process_image,
@@ -341,6 +341,9 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
                     progress_ratio, current_file, file_index, total_files
                 ),
             )
+            
+            self.original_size = original_size
+            self.compressed_size = compressed_size
 
             # Notify the user upon successful completion
             if self.running:
@@ -359,13 +362,30 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             self.setup_initial_ui()
 
     def show_operation_completed_message(self):
+        def format_size(size_bytes):
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if size_bytes < 1024 or unit == 'GB':
+                    return f"{size_bytes:.2f} {unit}"
+                size_bytes /= 1024
+        
+        original = format_size(self.original_size)
+        compressed = format_size(self.compressed_size)
+        savings = round((1 - (self.compressed_size / self.original_size)) * 100) if self.original_size > 0 else 0
+        
+        message = (f"Operation Completed Successfully!\n\n"
+                f"Original size: {original}\n"
+                f"Compressed size: {compressed}\n"
+                f"Space saved: {savings}%")
+        
         option = CTkMessagebox(
             title="Operation Completed",
-            message="Operation Completed Successfully!",
+            message=message,
             icon="check",
             option_1="OK",
             option_2="Open Directory",
+            width=500
         ).get()
+        
         if option == "Open Directory":
             self.open_output_directory()
 
