@@ -26,4 +26,4 @@ pywin32-ctypes==0.2.3
 setuptools==75.6.0
 tk==0.1.0
 tkinterdnd2==0.4.2
-psutils==7.0.1
+psutils
