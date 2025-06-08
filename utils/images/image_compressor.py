@@ -12,7 +12,7 @@ class ImageCompressor:
     def compress_images_in_directory(cls, input_directory, output_directory, progress_callback=None):
         setup_logging(output_directory)
         cls.LOGGER = logging.getLogger(__name__)
-        cls.LOGGER.info(f"Started compressing images in directory: {input_directory}")
+        cls.LOGGER.debug(f"Started compressing images in directory: {input_directory}")
 
         # Gather image files
         image_files = cls.get_image_files(input_directory)
@@ -91,6 +91,6 @@ class ImageCompressor:
                 # Resize and save image
                 img = img.resize(new_size, Image.LANCZOS)
                 img.save(output_file, optimize=True, quality=85)
-                cls.LOGGER.info(f"Image {input_file} saved successfully to: {output_file}")
+                cls.LOGGER.debug(f"Image {input_file} saved successfully to: {output_file}")
         except Exception as e:
             cls.LOGGER.error(f"An error occurred while compressing image: {input_file}. ERROR MESSAGE: {str(e)}")

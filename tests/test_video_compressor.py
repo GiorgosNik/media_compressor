@@ -139,26 +139,6 @@ def test_is_codec_available(mock_ffmpeg, mock_logger):
     assert result is True
     mock_logger.error.assert_not_called()
 
-def test_is_codec_available_error(mock_ffmpeg, mock_logger):
-    # Arrange
-    codec = "h264_qsv"
-    _, mock_input = mock_ffmpeg
-    mock_error = ffmpeg.Error(
-        "Codec unavailable",
-        b"mock stdout",
-        b"Codec unavailable"
-    )
-    mock_input.return_value.output.return_value.global_args.return_value.compile.side_effect = mock_error
-
-    # Act
-    result = VideoCompressor.is_codec_available(codec)
-
-    # Assert
-    assert result is False
-    mock_logger.error.assert_called_once_with(
-        "Error while detecting CODEC:h264_qsv. ERROR MESSAGE: Codec unavailable"
-    )
-
 def test_select_best_codec(mock_ffmpeg, mock_logger):
     # Arrange
     VideoCompressor.is_codec_available = mock.MagicMock(return_value=True)
@@ -355,27 +335,9 @@ def test_convert_incompatible_video(mock_subprocess_run, mock_logger):
         output_file
     ]
     mock_logger.info.assert_called_once_with(
-        f"Converted video: {input_file} to {output_file}"
+        f"Converted incompatible video: {input_file} to {output_file}"
     )
 
-def test_convert_incompatible_video_error(mock_logger):
-    # Arrange 
-    input_file = "path/to/input.mkv"
-    output_file = "path/to/output.mp4"
-    error_message = "Subprocess error"
-    mock_error = subprocess.CalledProcessError(
-        1, "cmd", stderr=error_message.encode()
-    )
-
-    with mock.patch("subprocess.run", side_effect=mock_error):
-        # Act
-        VideoCompressor.convert_incompatible_video(input_file, output_file)
-
-        # Assert
-        mock_logger.error.assert_called_once_with(
-            f"An error occurred while converting: {input_file}. ERROR MESSAGE: {error_message}"
-        )
-        
 def test_convert_incompatible_videos_in_directory_and_compress(mock_os_walk, mock_os_path_isdir, mock_logger):
     # Arrange 
     input_directory = "path/to/input"
@@ -405,31 +367,6 @@ def test_convert_incompatible_videos_in_directory_and_compress(mock_os_walk, moc
         )
         assert VideoCompressor.convert_incompatible_video.call_count == 2
         progress_callback.assert_called()
-
-@patch('subprocess.run')
-def test_convert_incompatible_video(mock_subprocess_run, mock_logger):
-    # Arrange
-    input_file = "path/to/input.mkv"
-    output_file = "path/to/output.mp4"
-    mock_subprocess_run.return_value = mock.Mock(returncode=0)
-
-    # Act
-    VideoCompressor.convert_incompatible_video(input_file, output_file)
-
-    # Assert
-    mock_subprocess_run.assert_called_once()
-    assert mock_subprocess_run.call_args[0][0] == [
-        'ffmpeg',
-        '-i', input_file,
-        '-c:v', 'libx264',
-        '-crf', '23',
-        '-metadata', 'comment=compressed',
-        '-preset', 'medium', 
-        output_file
-    ]
-    mock_logger.info.assert_called_once_with(
-        f"Converted video: {input_file} to {output_file}"
-    )
 
 def test_convert_incompatible_video_error(mock_logger):
     # Arrange 

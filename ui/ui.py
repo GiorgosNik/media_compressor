@@ -9,7 +9,7 @@ from datetime import datetime
 import time
 import webbrowser
 from tkinterdnd2 import TkinterDnD, DND_ALL
-
+import psutil
 
 try:
     from ctypes import windll
@@ -390,7 +390,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             self.open_output_directory()
 
     def stop_operation(self):
-        if not self.thread or self.thread.is_alive():
+        if not (self.thread or self.thread.is_alive()):
             return
         tid = ctypes.c_long(self.thread.ident)
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
@@ -399,7 +399,21 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
         if res > 1:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
             raise RuntimeError("Failed to kill thread")
+        
+        self.kill_ffmpeg_processes()
         self.running = False
         self.eta_updater_running = False  # Stop the countdown
         CTkMessagebox(message="The operation has been stopped.").get()
         self.setup_initial_ui()
+        
+    def kill_ffmpeg_processes(self):
+        """Kill all ffmpeg processes."""
+        # This is a very hacky way to kill ffmpeg processes.
+        # It finds all child processes of the current process and kills them if they are ffmpeg.
+        # I know this is not the best way to do it, but I really can't be asked to implement a more robust solution right now.
+        parent = psutil.Process(os.getpid())
+        children = parent.children(recursive=True)
+        for child in children:
+            if 'ffmpeg' in ' '.join(child.cmdline()):
+                child.kill()
+                self.LOGGER.info(f"Killed ffmpeg process with PID: {child.pid}")
