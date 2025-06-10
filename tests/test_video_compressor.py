@@ -129,7 +129,7 @@ def test_get_bitrate_error(mock_logger):
 
 def test_is_codec_available(mock_ffmpeg, mock_logger):
     # Arrange
-    codec = "h264_qsv"
+    codec = "libx264"
     mock_ffmpeg[1].compile.return_value = ["dummy command"]
 
     # Act
