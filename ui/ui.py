@@ -390,7 +390,7 @@ class CompressorApp(ctk.CTk, TkinterDnD.DnDWrapper):
             self.open_output_directory()
 
     def stop_operation(self):
-        if not (self.thread or self.thread.is_alive()):
+        if not self.thread or not self.thread.is_alive():
             return
         tid = ctypes.c_long(self.thread.ident)
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
