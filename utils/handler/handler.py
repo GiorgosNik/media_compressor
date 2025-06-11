@@ -39,7 +39,7 @@ class Handler:
 
         setup_logging(output_directory)
         cls.LOGGER = logging.getLogger(__name__)
-        cls.LOGGER.info(f"Output directory created: {output_directory}")
+        cls.LOGGER.debug(f"Output directory created: {output_directory}")
 
         try:
             if process_video:

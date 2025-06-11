@@ -1,7 +1,7 @@
 import json
 import subprocess
 import sys
-import ffmpeg
+import tempfile
 import os
 from utils.video.config import INCOMPATIBLE_FILETYPES, VIDEO_FILETYPES
 from utils.video.config import VIDEO_CODECS
@@ -70,16 +70,34 @@ class VideoCompressor:
     @classmethod
     def is_codec_available(cls, codec):
         """Check if the specified codec is available on the system."""
-        try:
-            ffmpeg.input("dummy").output("dummy.mp4", vcodec=codec).global_args(
-                "-loglevel", "error"
-            ).compile()
-            return True
-        except ffmpeg.Error as e:
-            cls.LOGGER.error(
-                f"Error while detecting CODEC:{codec}. ERROR MESSAGE: {e.stderr.decode()}"
-            )
-            return False
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = os.path.join(tmpdir, "test_output.mp4")
+            try:
+                result = subprocess.run(
+                    [
+                        "ffmpeg",
+                        "-y",
+                        "-f", "lavfi",
+                        "-i", "color=black:s=1280x720:d=1",
+                        "-c:v", codec,
+                        "-b:v", "1M",
+                        output_path
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+
+                if result.returncode == 0 and os.path.exists(output_path):
+                    cls.LOGGER.debug(f"Codec {codec} selected.")
+                    return True
+                else:
+                    cls.LOGGER.debug(f"Codec {codec} not found.")
+                    return False
+
+            except FileNotFoundError:
+                cls.LOGGER.debug("FFmpeg not found in PATH.")
+                return False
 
     @classmethod
     def select_best_codec(cls):
@@ -135,7 +153,7 @@ class VideoCompressor:
                 output_file,
             ]
             cls.run_subprocess_with_flags(cmd, capture_output=True, check=True)
-            cls.LOGGER.info(f"Converted video: {input_file} to {output_file}")
+            cls.LOGGER.info(f"Converted incompatible video: {input_file} to {output_file}")
         except subprocess.CalledProcessError as e:
             print(str(e.stderr))
             cls.LOGGER.error(
@@ -232,7 +250,7 @@ class VideoCompressor:
         setup_logging(output_directory)
         cls.LOGGER = logging.getLogger(__name__)
 
-        cls.LOGGER.info(f"Started compressing videos in directory:{input_directory}")
+        cls.LOGGER.debug(f"Started compressing videos in directory:{input_directory}")
 
         # Select the best available codec
         video_codec = cls.select_best_codec()
@@ -275,7 +293,7 @@ class VideoCompressor:
 
         if progress_callback:
             progress_callback(1, "", total_files, total_files)
-        cls.LOGGER.info(f"Finished compressing videos in directory:{input_directory}")
+        cls.LOGGER.debug(f"Finished compressing videos in directory:{input_directory}")
 
     @classmethod
     def convert_incompatible_videos_in_directory_and_compress(
@@ -284,7 +302,7 @@ class VideoCompressor:
         setup_logging(output_directory)
         cls.LOGGER = logging.getLogger(__name__)
 
-        cls.LOGGER.info(
+        cls.LOGGER.debug(
             f"Started converting incompatible filetype videos in directory:{input_directory}"
         )
 
@@ -324,4 +342,4 @@ class VideoCompressor:
 
         if progress_callback:
             progress_callback(1, "", total_files, total_files)
-        cls.LOGGER.info(f"Finished compressing videos in directory:{input_directory}")
+        cls.LOGGER.debug(f"Finished compressing videos in directory:{input_directory}")
