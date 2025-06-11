@@ -89,14 +89,14 @@ class VideoCompressor:
                 )
 
                 if result.returncode == 0 and os.path.exists(output_path):
-                    cls.LOGGER.debug(f"Codec {codec} selected.")
+                    cls.LOGGER.info(f"Codec {codec} selected.")
                     return True
                 else:
                     cls.LOGGER.debug(f"Codec {codec} not found.")
                     return False
 
             except FileNotFoundError:
-                cls.LOGGER.debug("FFmpeg not found in PATH.")
+                cls.LOGGER.error("FFmpeg not found in PATH.")
                 return False
 
     @classmethod

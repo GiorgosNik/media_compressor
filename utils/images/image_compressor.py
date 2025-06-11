@@ -91,6 +91,6 @@ class ImageCompressor:
                 # Resize and save image
                 img = img.resize(new_size, Image.LANCZOS)
                 img.save(output_file, optimize=True, quality=85)
-                cls.LOGGER.debug(f"Image {input_file} saved successfully to: {output_file}")
+                cls.LOGGER.info(f"Image {input_file} saved successfully to: {output_file}")
         except Exception as e:
             cls.LOGGER.error(f"An error occurred while compressing image: {input_file}. ERROR MESSAGE: {str(e)}")

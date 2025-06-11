@@ -17,7 +17,7 @@ def setup_logging(output_dir):
     log_file = os.path.join(output_dir, "app.log")
 
     logging.basicConfig(
-        level=logging.DEBUG,  # Set root logger level
+        level=logging.INFO,  # Set root logger level
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         handlers=[
             logging.FileHandler(
@@ -25,4 +25,4 @@ def setup_logging(output_dir):
             )  # Use UTF-8 encoding for log file
         ],
     )
-    logging.getLogger("PIL").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.INFO)
