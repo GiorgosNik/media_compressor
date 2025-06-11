@@ -102,7 +102,7 @@ def test_compress_image(mock_logger, mock_image_open):
     # Assert
     mock_img.resize.assert_called_once_with((400, 300), Image.LANCZOS)
     mock_resized_img.save.assert_called_once_with(output_file, optimize=True, quality=85)
-    mock_logger.debug.assert_called_once_with(f"Image {input_file} saved successfully to: {output_file}")
+    mock_logger.info.assert_called_once_with(f"Image {input_file} saved successfully to: {output_file}")
 
 def test_compress_image_error(mock_image_open, mock_logger):
     # Arrange
