@@ -16,3 +16,4 @@ dist/
 *.spec
 coverage.xml
 /demo
+.vscode/settings.json
